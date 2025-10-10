@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
-import { FaUserCircle, FaShieldAlt, FaBell, FaLock, FaMobileAlt  } from 'react-icons/fa';
+import React, { useState, useRef } from 'react';
+import { 
+  FaUserCircle, 
+  FaShieldAlt, 
+  FaBell, 
+  FaLock, 
+  FaMobileAlt, 
+  FaUser,
+  // --- FIX: Added missing icons ---
+  FaUpload,
+  FaFileImage
+} from 'react-icons/fa';
 
 // --- Reusable Sub-Components ---
 
-// A reusable input field component for consistent styling
 const FormInput = ({ id, label, type = 'text', value, onChange, placeholder, disabled = false }) => (
   <div>
     <label htmlFor={id} className="block text-sm font-medium text-slate-400 mb-2">
@@ -21,46 +30,167 @@ const FormInput = ({ id, label, type = 'text', value, onChange, placeholder, dis
   </div>
 );
 
-// The component for the "Profile" tab content
+const DocumentUploader = ({ title, file, onFileChange }) => {
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      onFileChange(selectedFile);
+    }
+  };
+
+  const handleBoxClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleRemoveFile = (e) => {
+    e.stopPropagation(); // Prevent the click from re-opening the file dialog
+    onFileChange(null);
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-400 mb-2">{title}</label>
+      <div
+        onClick={handleBoxClick}
+        className="flex justify-center items-center w-full h-40 px-6 py-10 border-2 border-slate-600 border-dashed rounded-lg cursor-pointer hover:border-blue-500 hover:bg-slate-700/50 transition-colors"
+      >
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/png, image/jpeg, application/pdf"
+          className="hidden"
+        />
+        {file ? (
+          <div className="text-center">
+            <FaFileImage className="mx-auto text-4xl text-blue-400 mb-2" />
+            <p className="text-sm text-slate-200 font-semibold">{file.name}</p>
+            <button
+              type="button"
+              onClick={handleRemoveFile}
+              className="mt-2 text-xs text-red-400 hover:underline"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div className="text-center">
+            <FaUpload className="mx-auto text-4xl text-slate-500 mb-2" />
+            <p className="text-sm text-slate-400">
+              <span className="font-semibold text-blue-400">Click to upload</span> or drag and drop
+            </p>
+            <p className="text-xs text-slate-500">PNG, JPG or PDF</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const ProfileSettings = () => {
   const [formData, setFormData] = useState({
-    firstName: 'Your First Name',
-    lastName: 'Your Last Name',
-    dob: '', // Date of birth is often not editable
+    // --- ENHANCEMENT: Cleaner initial state ---
+    firstName: '',
+    lastName: '',
+    dob: '',
     address: '',
-    zipCode: 'Zip Code',
+    zipCode: '',
     city: '',
   });
+  
+  const [profileImage, setProfileImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [idFront, setIdFront] = useState(null);
+  const [idBack, setIdBack] = useState(null);
+
+  const profilePicInputRef = useRef(null);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith("image/")) {
+      setProfileImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+  
+  const handleUploadClick = () => {
+    profilePicInputRef.current.click();
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Form submitted:", formData);
-    // Add API call logic here
-    alert('Profile updated successfully!');
+    if (profileImage) console.log("Image to upload:", profileImage);
+    if (idFront) console.log("ID Front to upload:", idFront);
+    if (idBack) console.log("ID Back to upload:", idBack);
+    alert('Profile update request submitted!');
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="flex items-center gap-6 pb-6 border-b border-slate-700">
+        <div className="relative">
+          {imagePreview ? (
+            <img src={imagePreview} alt="Profile Preview" className="w-24 h-24 rounded-full object-cover" />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-slate-700 flex items-center justify-center">
+              <FaUser className="text-4xl text-slate-500" />
+            </div>
+          )}
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-white">
+            {formData.firstName || formData.lastName ? `${formData.firstName} ${formData.lastName}` : "User Profile"}
+          </h3>
+          <p className="text-sm text-slate-400">Update your photo and personal details.</p>
+          <div className="mt-3 flex items-center gap-4">
+            <input
+              type="file"
+              ref={profilePicInputRef}
+              onChange={handleImageChange}
+              accept="image/png, image/jpeg"
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={handleUploadClick}
+              className="bg-slate-600/50 text-white text-sm font-semibold py-2 px-4 rounded-lg hover:bg-slate-700 transition"
+            >
+              Change photo
+            </button>
+          </div>
+        </div>
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormInput id="firstName" label="First name" value={formData.firstName} onChange={handleChange} />
-        <FormInput id="lastName" label="Last name" value={formData.lastName} onChange={handleChange} />
+        <FormInput id="firstName" label="First name" value={formData.firstName} onChange={handleChange} placeholder="Enter your first name" />
+        <FormInput id="lastName" label="Last name" value={formData.lastName} onChange={handleChange} placeholder="Enter your last name" />
       </div>
       <FormInput id="dob" label="Date of Birth" value={formData.dob} onChange={handleChange} type='date' />
       <FormInput id="address" label="Street & Number, Building, Flat, etc." placeholder="Enter your address" value={formData.address} onChange={handleChange} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormInput id="zipCode" label="Postal/Zip Code" value={formData.zipCode} onChange={handleChange} />
+        <FormInput id="zipCode" label="Postal/Zip Code" placeholder="Enter zip code" value={formData.zipCode} onChange={handleChange} />
         <FormInput id="city" label="City/Town" placeholder="Enter your city" value={formData.city} onChange={handleChange} />
       </div>
+
+      <div className="border-t border-slate-700 pt-6">
+        <h2 className="text-xl font-bold text-white mb-1">Identity Verification</h2>
+        <p className="text-sm text-slate-400 mb-6">To comply with regulations, please upload a clear image of the front and back of your government-issued ID.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <DocumentUploader title="Front of ID Card" file={idFront} onFileChange={setIdFront} />
+          <DocumentUploader title="Back of ID Card" file={idBack} onFileChange={setIdBack} />
+        </div>
+      </div>
+      
       <div className="pt-4 flex justify-end">
-        <button
-          type="submit"
-          className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition"
-        >
+        <button type="submit" className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">
           Save Changes
         </button>
       </div>

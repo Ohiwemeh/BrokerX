@@ -11,6 +11,7 @@ import SettingsPage from "./pages/Settings";
 import Landing from "./pages/Landing";
 import WalletPage from "./pages/WalletPage";
 import TransactionsPage from "./pages/TransactionsPage";
+import AdminPage from "./admin/AdminPage";
 
 
 const chartData = [
@@ -48,6 +49,7 @@ export default function AppRouter() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/wallet" element={<WalletPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
