@@ -12,6 +12,7 @@ import {
   FaEllipsisH,
   FaPlus
 } from 'react-icons/fa';
+import {Link} from 'react-router'
 
 
 // --- Reusable Sub-Components ---
@@ -51,9 +52,12 @@ const EmptyState = ({ title, message, buttonText }) => (
     <div className="text-center py-10">
         <h3 className="text-lg font-semibold text-white">{title}</h3>
         <p className="text-slate-400 mt-1">{message}</p>
-        <button className="mt-4 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2 mx-auto">
-           <FaPlus/> {buttonText}
-        </button>
+       <Link 
+  to="/depositpage" 
+  className="mt-4 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+>
+  <FaPlus/> {buttonText}
+</Link>
     </div>
 );
 

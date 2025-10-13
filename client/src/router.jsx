@@ -30,10 +30,12 @@ export default function AppRouter() {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/" element={<Landing />} />
 
         {/* Protected (Main App) Routes */}
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Landing />} />
+          
           <Route path="/dashboard" element={<Dashboard />} 
            chartData={chartData}
       bitcoinPrice={25948.18}
@@ -49,7 +51,7 @@ export default function AppRouter() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/wallet" element={<WalletPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
-          <Route path="/admin" element={<AdminPage />} />
+          
         </Route>
       </Routes>
     </BrowserRouter>
