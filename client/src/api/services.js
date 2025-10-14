@@ -184,3 +184,26 @@ export const adminService = {
     return response.data;
   },
 };
+
+// Email Services
+export const emailService = {
+  sendEmail: async (userId, subject, message) => {
+    const response = await api.post('/email/send', { userId, subject, message });
+    return response.data;
+  },
+
+  sendVerificationEmail: async (userId) => {
+    const response = await api.post('/email/send-verification', { userId });
+    return response.data;
+  },
+
+  sendRejectionEmail: async (userId, reason) => {
+    const response = await api.post('/email/send-rejection', { userId, reason });
+    return response.data;
+  },
+
+  testEmail: async () => {
+    const response = await api.post('/email/test');
+    return response.data;
+  },
+};

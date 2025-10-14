@@ -5,6 +5,7 @@ const User = require('../models/user.model');
 const Transaction = require('../models/transaction.model');
 const { verifyToken, isAdmin } = require('../middleware/auth.middleware');
 const NotificationService = require('../services/notificationService');
+const EmailService = require('../services/emailService');
 
 // Apply authentication and admin check to all routes
 router.use(verifyToken);
@@ -100,6 +101,13 @@ router.put('/users/:id/verify', async (req, res) => {
     // Send notification to user
     await NotificationService.notifyUserVerified(user);
 
+    // Send verification email
+    try {
+      await EmailService.sendVerificationEmail(user);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+    }
+
     res.json({
       message: 'User verified successfully',
       user: await User.findById(user._id).select('-password')
@@ -126,8 +134,17 @@ router.put('/users/:id/reject', async (req, res) => {
     user.accountStatus = 'Rejected';
     await user.save();
 
+    const rejectionReason = reason || 'Please contact support for more information.';
+
     // Send notification to user with reason
-    await NotificationService.notifyUserRejected(user, reason || 'Please contact support for more information.');
+    await NotificationService.notifyUserRejected(user, rejectionReason);
+
+    // Send rejection email
+    try {
+      await EmailService.sendRejectionEmail(user, rejectionReason);
+    } catch (emailError) {
+      console.error('Failed to send rejection email:', emailError);
+    }
 
     res.json({
       message: 'User rejected',

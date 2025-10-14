@@ -5,12 +5,25 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 // Initialize the app
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST']
+  }
+});
+
 app.use(cors()); // Enable CORS for all routes
 app.use(express.json()); // Allow the server to accept JSON data
+
+// Make io accessible to routes
+app.set('io', io);
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -62,6 +75,7 @@ const transactionRouter = require('./routes/transaction.routes');
 const walletRouter = require('./routes/wallet.routes');
 const adminRouter = require('./routes/admin.routes');
 const notificationRouter = require('./routes/notification.routes');
+const emailRouter = require('./routes/email.routes');
 
 // Use routes
 app.use('/api/users', userRouter);
@@ -70,6 +84,7 @@ app.use('/api/transactions', transactionRouter);
 app.use('/api/wallet', walletRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/notifications', notificationRouter);
+app.use('/api/email', emailRouter);
 
 // A simple test route to make sure everything is working
 app.get('/', (req, res) => {
@@ -82,9 +97,25 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
 
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log('✅ Client connected:', socket.id);
+
+  // Join admin room
+  socket.on('join-admin', (userId) => {
+    socket.join('admin-room');
+    console.log(`Admin ${userId} joined admin room`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('❌ Client disconnected:', socket.id);
+  });
+});
+
 // Define the port and start the server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`Socket.IO is running`);
   console.log(`Uploads directory: ${uploadsDir}`);
 });

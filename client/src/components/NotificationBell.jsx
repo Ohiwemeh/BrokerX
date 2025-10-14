@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FaBell, FaCheck, FaCheckDouble, FaTrash, FaTimes } from 'react-icons/fa';
 import { notificationService } from '../api/notificationService';
 import { Link } from 'react-router';
+import { useSocket } from '../context/SocketContext';
+import { useNotificationSound } from '../hooks/useNotificationSound';
 
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +13,10 @@ const NotificationBell = () => {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
   const audioRef = useRef(null);
+  
+  // Socket and sound
+  const { socket, connected } = useSocket();
+  const { playSound } = useNotificationSound();
 
   // Fetch notifications
   const fetchNotifications = async (status = 'all') => {
@@ -42,12 +48,64 @@ const NotificationBell = () => {
     }
   };
 
+  // Listen for real-time notifications via Socket.IO
+  useEffect(() => {
+    if (!socket) {
+      console.log('❌ Socket not available in NotificationBell');
+      return;
+    }
+
+    console.log('✅ Setting up socket listener for new-user-signup');
+
+    // Listen for new user signup notifications
+    socket.on('new-user-signup', (data) => {
+      console.log('🔔 New user signup notification received:', data);
+      
+      // Play notification sound
+      try {
+        playSound();
+        console.log('✅ Sound played');
+      } catch (error) {
+        console.error('❌ Sound error:', error);
+      }
+      
+      // Refresh notifications and count
+      console.log('🔄 Refreshing notifications...');
+      fetchNotifications(activeTab);
+      fetchUnreadCount();
+      
+      // Show browser notification if permission granted
+      if (Notification.permission === 'granted') {
+        new Notification('New User Signup', {
+          body: data.message,
+          icon: '/logo.png',
+          badge: '/logo.png'
+        });
+        console.log('✅ Browser notification shown');
+      } else {
+        console.log('⚠️ Browser notification permission:', Notification.permission);
+      }
+    });
+
+    return () => {
+      console.log('🧹 Cleaning up socket listener');
+      socket.off('new-user-signup');
+    };
+  }, [socket, activeTab, playSound]);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
   // Initial fetch
   useEffect(() => {
     fetchNotifications(activeTab);
     fetchUnreadCount();
 
-    // Poll for new notifications every 30 seconds
+    // Poll for new notifications every 30 seconds (backup)
     const interval = setInterval(() => {
       fetchUnreadCount();
       if (isOpen) {

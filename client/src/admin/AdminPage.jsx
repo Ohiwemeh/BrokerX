@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { adminService } from '../api/services';
+import { adminService, emailService } from '../api/services';
 import NotificationBell from '../components/NotificationBell';
 import { 
   FaUsers, 
@@ -217,23 +217,35 @@ const AdminPage = () => {
                       e.preventDefault();
                       const subject = e.target.subject.value;
                       const message = e.target.message.value;
+                      const submitButton = e.target.querySelector('button[type="submit"]');
+                      
                       try {
-                          await adminService.sendEmail(selectedUser._id, subject, message);
-                          alert('Email sent successfully!');
+                          submitButton.disabled = true;
+                          submitButton.textContent = 'Sending...';
+                          
+                          await emailService.sendEmail(selectedUser._id, subject, message);
+                          alert(`Email sent successfully to ${selectedUser.email}!`);
                           setIsModalOpen(false);
                       } catch (err) {
-                          alert(err.response?.data?.message || 'Failed to send email');
+                          alert(err.response?.data?.message || 'Failed to send email. Please check your email configuration.');
+                          submitButton.disabled = false;
+                          submitButton.textContent = 'Send Email';
                       }
                   }}>
+                      <div className="mb-3 p-3 bg-blue-500/10 border border-blue-400/30 rounded-lg">
+                          <p className="text-sm text-blue-300">
+                              <strong>To:</strong> {selectedUser.email}
+                          </p>
+                      </div>
                       <div>
                           <label className="block text-sm font-medium text-slate-400 mb-2">Subject</label>
                           <input name="subject" type="text" placeholder="Email subject" required className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                       </div>
                        <div>
                           <label className="block text-sm font-medium text-slate-400 mb-2">Message</label>
-                          <textarea name="message" rows="4" placeholder="Your message here..." required className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                          <textarea name="message" rows="6" placeholder="Your message here..." required className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"/>
                       </div>
-                      <button type="submit" className="w-full bg-blue-600 font-bold py-2 rounded-lg hover:bg-blue-700 transition">Send Email</button>
+                      <button type="submit" className="w-full bg-blue-600 font-bold py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Send Email</button>
                   </form>
               );
               break;

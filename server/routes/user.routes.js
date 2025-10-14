@@ -49,7 +49,29 @@ router.post('/signup', async (req, res) => {
     const savedUser = await newUser.save();
 
     // 6.5. Notify admins of new user registration
-    await NotificationService.notifyUserRegistered(savedUser);
+    try {
+      const notifications = await NotificationService.notifyUserRegistered(savedUser);
+      console.log('✅ Admin notifications created:', notifications.length);
+    } catch (notifError) {
+      console.error('❌ Failed to create admin notifications:', notifError);
+    }
+
+    // 6.6. Emit real-time notification to admin via Socket.IO
+    const io = req.app.get('io');
+    if (io) {
+      const eventData = {
+        userId: savedUser._id,
+        name: savedUser.name,
+        email: savedUser.email,
+        country: savedUser.country,
+        timestamp: new Date(),
+        message: `New user ${savedUser.name} has signed up!`
+      };
+      io.to('admin-room').emit('new-user-signup', eventData);
+      console.log('✅ Socket event emitted to admin-room:', eventData);
+    } else {
+      console.log('❌ Socket.IO not available');
+    }
 
     // 7. Generate JWT token
     const token = jwt.sign(
