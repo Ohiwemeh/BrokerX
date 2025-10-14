@@ -246,27 +246,27 @@ const AdminPage = () => {
 
 
   return (
-    <div className="flex h-screen bg-slate-900 text-white font-sans">
+    <div className="flex flex-col md:flex-row h-screen bg-slate-900 text-white font-sans">
         {isModalOpen && <Modal title={modalContent.title} onClose={() => setIsModalOpen(false)}>{modalContent.content}</Modal>}
       {/* Left Panel: User List */}
-      <aside className="w-1/3 max-w-sm h-full flex flex-col border-r border-slate-800">
-        <div className="p-4 border-b border-slate-800">
+      <aside className="w-full md:w-1/3 md:max-w-sm h-1/3 md:h-full flex flex-col border-b md:border-b-0 md:border-r border-slate-800">
+        <div className="p-3 sm:p-4 border-b border-slate-800">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h1 className="text-2xl font-bold text-blue-500">Admin Panel</h1>
-              <p className="text-sm text-slate-400">BrokerX User Management</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-blue-500">Admin Panel</h1>
+              <p className="text-xs sm:text-sm text-slate-400">BrokerX User Management</p>
             </div>
             <NotificationBell />
           </div>
         </div>
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           <div className="relative">
             <input
               type="text"
               placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 pl-10 pr-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           </div>
@@ -297,14 +297,14 @@ const AdminPage = () => {
                     <li
                         key={user._id}
                         onClick={() => setSelectedUser(user)}
-                        className={`p-4 cursor-pointer hover:bg-slate-700/50 transition-colors ${selectedUser?._id === user._id ? 'bg-slate-700' : ''}`}
+                        className={`p-3 sm:p-4 cursor-pointer hover:bg-slate-700/50 transition-colors ${selectedUser?._id === user._id ? 'bg-slate-700' : ''}`}
                     >
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <p className="font-semibold text-white">{user.name}</p>
-                                <p className="text-sm text-slate-400">{user.email}</p>
+                        <div className="flex justify-between items-center gap-2">
+                            <div className="min-w-0 flex-1">
+                                <p className="font-semibold text-white text-sm sm:text-base truncate">{user.name}</p>
+                                <p className="text-xs sm:text-sm text-slate-400 truncate">{user.email}</p>
                             </div>
-                            <span className={`px-2 py-1 text-xs font-bold rounded-full ${statusClasses[user.accountStatus] || 'bg-gray-500/10 text-gray-400'}`}>
+                            <span className={`px-2 py-1 text-xs font-bold rounded-full flex-shrink-0 ${statusClasses[user.accountStatus] || 'bg-gray-500/10 text-gray-400'}`}>
                                 {user.accountStatus}
                             </span>
                         </div>
@@ -317,32 +317,32 @@ const AdminPage = () => {
       </aside>
 
       {/* Right Panel: User Details */}
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-y-auto">
         {selectedUser ? (
-          <div className="space-y-8">
+          <div className="space-y-4 sm:space-y-6 md:space-y-8">
             {/* User Header */}
-            <div className="pb-6 border-b border-slate-800">
-                <div className="flex justify-between items-start">
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <h2 className="text-3xl font-bold">{selectedUser.name}</h2>
+            <div className="pb-4 sm:pb-6 border-b border-slate-800">
+                <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
+                    <div className="space-y-2 sm:space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">{selectedUser.name}</h2>
                           <VerificationBadge status={selectedUser.accountStatus} />
                         </div>
-                        <p className="text-slate-400">Joined on {new Date(selectedUser.createdAt).toLocaleDateString()}</p>
+                        <p className="text-slate-400 text-xs sm:text-sm">Joined on {new Date(selectedUser.createdAt).toLocaleDateString()}</p>
                     </div>
-                     <div className="flex gap-2">
-                         <button onClick={handleVerifyUser} className="bg-green-600/80 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg transition">
-                            <FaUserCheck className="inline mr-2"/> Verify
+                     <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                         <button onClick={handleVerifyUser} className="bg-green-600/80 hover:bg-green-500 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition text-sm flex items-center justify-center gap-2">
+                            <FaUserCheck /> <span>Verify</span>
                          </button>
-                         <button onClick={handleRejectUser} className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-4 rounded-lg transition">
-                            <FaUserTimes className="inline mr-2"/> Reject
+                         <button onClick={handleRejectUser} className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition text-sm flex items-center justify-center gap-2">
+                            <FaUserTimes /> <span>Reject</span>
                          </button>
                      </div>
                 </div>
             </div>
 
             {/* Personal Info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <InfoField label="Email Address" value={selectedUser.email} />
                 <InfoField label="Date of Birth" value={selectedUser.dob ? new Date(selectedUser.dob).toLocaleDateString() : 'N/A'} />
                 <InfoField label="Wallet Balance" value={`$${selectedUser.balance?.toLocaleString() || 0}`} />
@@ -353,7 +353,7 @@ const AdminPage = () => {
 
              {/* Security */}
             <div>
-                 <h3 className="text-lg font-bold text-slate-300 mb-4">Account Security</h3>
+                 <h3 className="text-base sm:text-lg font-bold text-slate-300 mb-3 sm:mb-4">Account Security</h3>
                  <div className="bg-slate-800 p-4 rounded-lg flex items-center justify-between">
                      <div className="flex items-center gap-4">
                          <FaKey className="text-2xl text-slate-400"/>
@@ -367,8 +367,8 @@ const AdminPage = () => {
 
             {/* ID Documents */}
             <div>
-                <h3 className="text-lg font-bold text-slate-300 mb-4">Uploaded Documents</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <h3 className="text-base sm:text-lg font-bold text-slate-300 mb-3 sm:mb-4">Uploaded Documents</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                         <p className="text-sm font-semibold text-slate-400 mb-2">ID Front</p>
                         {selectedUser.idFrontUrl ? (
@@ -394,13 +394,13 @@ const AdminPage = () => {
 
             {/* Admin Actions */}
             <div>
-                <h3 className="text-lg font-bold text-slate-300 mb-4">Admin Actions</h3>
+                <h3 className="text-base sm:text-lg font-bold text-slate-300 mb-3 sm:mb-4">Admin Actions</h3>
                 {selectedUser.accountStatus !== 'Verified' && (
                   <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-400/30 rounded-lg text-sm text-yellow-300">
                     ⚠️ User must be verified before you can add funds
                   </div>
                 )}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                     <button 
                       onClick={() => selectedUser.accountStatus === 'Verified' ? openModal('addFunds') : alert('User must be verified before adding funds')}
                       disabled={selectedUser.accountStatus !== 'Verified'}
