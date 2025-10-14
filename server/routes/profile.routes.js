@@ -5,6 +5,7 @@ const User = require('../models/user.model');
 const bcrypt = require('bcryptjs');
 const { verifyToken } = require('../middleware/auth.middleware');
 const multer = require('multer');
+const NotificationService = require('../services/notificationService');
 
 // Configure multer to store files in memory (not disk)
 const storage = multer.memoryStorage();
@@ -76,6 +77,9 @@ router.put('/', verifyToken, async (req, res) => {
     }
 
     await user.save();
+
+    // Notify admins of profile update
+    await NotificationService.notifyProfileUpdated(user);
 
     res.json({
       message: 'Profile updated successfully',

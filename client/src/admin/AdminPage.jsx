@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../api/services';
+import NotificationBell from '../components/NotificationBell';
 import { 
   FaUsers, 
   FaSearch, 
@@ -12,7 +13,10 @@ import {
   FaTimes,
   FaFileImage,
   FaEye,
-  FaEyeSlash
+  FaEyeSlash,
+  FaCertificate,
+  FaExclamationCircle,
+  FaTimesCircle
 } from 'react-icons/fa';
 
 // --- Reusable Sub-Components ---
@@ -23,6 +27,42 @@ const InfoField = ({ label, value }) => (
     <p className="text-base text-white font-medium">{value}</p>
   </div>
 );
+
+const VerificationBadge = ({ status }) => {
+  const statusConfig = {
+    'Verified': {
+      icon: FaCertificate,
+      color: 'text-yellow-500',
+      bgColor: 'bg-yellow-500/10',
+      borderColor: 'border-yellow-500/30',
+      label: 'Verified'
+    },
+    'Pending': {
+      icon: FaExclamationCircle,
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-500/10',
+      borderColor: 'border-amber-500/30',
+      label: 'Pending'
+    },
+    'Rejected': {
+      icon: FaTimesCircle,
+      color: 'text-red-500',
+      bgColor: 'bg-red-500/10',
+      borderColor: 'border-red-500/30',
+      label: 'Rejected'
+    }
+  };
+
+  const config = statusConfig[status] || statusConfig['Pending'];
+  const Icon = config.icon;
+
+  return (
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${config.bgColor} ${config.borderColor}`}>
+      <Icon className={`text-xl ${config.color}`} />
+      <span className={`font-semibold ${config.color}`}>{config.label}</span>
+    </div>
+  );
+};
 
 const ActionButton = ({ icon, label, onClick, className = 'bg-slate-600 hover:bg-slate-500' }) => (
   <button onClick={onClick} className={`flex items-center justify-center gap-2 w-full text-sm font-semibold py-2 px-4 rounded-lg transition ${className}`}>
@@ -211,8 +251,13 @@ const AdminPage = () => {
       {/* Left Panel: User List */}
       <aside className="w-1/3 max-w-sm h-full flex flex-col border-r border-slate-800">
         <div className="p-4 border-b border-slate-800">
-          <h1 className="text-2xl font-bold text-blue-500">Admin Panel</h1>
-          <p className="text-sm text-slate-400">BrokerX User Management</p>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h1 className="text-2xl font-bold text-blue-500">Admin Panel</h1>
+              <p className="text-sm text-slate-400">BrokerX User Management</p>
+            </div>
+            <NotificationBell />
+          </div>
         </div>
         <div className="p-4">
           <div className="relative">
@@ -278,8 +323,11 @@ const AdminPage = () => {
             {/* User Header */}
             <div className="pb-6 border-b border-slate-800">
                 <div className="flex justify-between items-start">
-                    <div>
-                        <h2 className="text-3xl font-bold">{selectedUser.name}</h2>
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <h2 className="text-3xl font-bold">{selectedUser.name}</h2>
+                          <VerificationBadge status={selectedUser.accountStatus} />
+                        </div>
                         <p className="text-slate-400">Joined on {new Date(selectedUser.createdAt).toLocaleDateString()}</p>
                     </div>
                      <div className="flex gap-2">

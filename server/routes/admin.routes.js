@@ -4,6 +4,7 @@ const router = require('express').Router();
 const User = require('../models/user.model');
 const Transaction = require('../models/transaction.model');
 const { verifyToken, isAdmin } = require('../middleware/auth.middleware');
+const NotificationService = require('../services/notificationService');
 
 // Apply authentication and admin check to all routes
 router.use(verifyToken);
@@ -96,6 +97,9 @@ router.put('/users/:id/verify', async (req, res) => {
     user.isTradingAccountActivated = true;
     await user.save();
 
+    // Send notification to user
+    await NotificationService.notifyUserVerified(user);
+
     res.json({
       message: 'User verified successfully',
       user: await User.findById(user._id).select('-password')
@@ -121,6 +125,9 @@ router.put('/users/:id/reject', async (req, res) => {
 
     user.accountStatus = 'Rejected';
     await user.save();
+
+    // Send notification to user with reason
+    await NotificationService.notifyUserRejected(user, reason || 'Please contact support for more information.');
 
     res.json({
       message: 'User rejected',

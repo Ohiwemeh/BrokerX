@@ -61,6 +61,7 @@ const profileRouter = require('./routes/profile.routes');
 const transactionRouter = require('./routes/transaction.routes');
 const walletRouter = require('./routes/wallet.routes');
 const adminRouter = require('./routes/admin.routes');
+const notificationRouter = require('./routes/notification.routes');
 
 // Use routes
 app.use('/api/users', userRouter);
@@ -68,6 +69,7 @@ app.use('/api/profile', profileRouter);
 app.use('/api/transactions', transactionRouter);
 app.use('/api/wallet', walletRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/notifications', notificationRouter);
 
 // A simple test route to make sure everything is working
 app.get('/', (req, res) => {

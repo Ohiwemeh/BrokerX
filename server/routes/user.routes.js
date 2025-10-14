@@ -4,6 +4,7 @@ const router = require('express').Router();
 const User = require('../models/user.model'); // Import the User model
 const bcrypt = require('bcryptjs'); // Import bcrypt for password hashing
 const jwt = require('jsonwebtoken'); // Import jsonwebtoken for token generation
+const NotificationService = require('../services/notificationService');
 
 
 
@@ -46,6 +47,9 @@ router.post('/signup', async (req, res) => {
 
     // 6. Save the user to the database
     const savedUser = await newUser.save();
+
+    // 6.5. Notify admins of new user registration
+    await NotificationService.notifyUserRegistered(savedUser);
 
     // 7. Generate JWT token
     const token = jwt.sign(

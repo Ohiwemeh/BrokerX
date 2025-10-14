@@ -11,7 +11,10 @@ import {
   FaChartLine,
   FaEllipsisH,
   FaPlus,
-  FaUser
+  FaUser,
+  FaCertificate,
+  FaExclamationCircle,
+  FaTimesCircle
 } from 'react-icons/fa';
 import {Link} from 'react-router';
 import { transactionService, profileService } from '../api/services';
@@ -19,6 +22,42 @@ import { getCryptoPrices, formatPrice, formatPercentage } from '../api/cryptoSer
 
 // --- Reusable Sub-Components ---
 
+// Verification Badge Component
+const VerificationBadge = ({ status }) => {
+  const statusConfig = {
+    'Verified': {
+      icon: FaCertificate,
+      color: 'text-yellow-500',
+      bgColor: 'bg-yellow-500/10',
+      borderColor: 'border-yellow-500/30',
+      label: 'Verified'
+    },
+    'Pending': {
+      icon: FaExclamationCircle,
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-500/10',
+      borderColor: 'border-amber-500/30',
+      label: 'Pending Verification'
+    },
+    'Rejected': {
+      icon: FaTimesCircle,
+      color: 'text-red-500',
+      bgColor: 'bg-red-500/10',
+      borderColor: 'border-red-500/30',
+      label: 'Verification Rejected'
+    }
+  };
+
+  const config = statusConfig[status] || statusConfig['Pending'];
+  const Icon = config.icon;
+
+  return (
+    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border ${config.bgColor} ${config.borderColor}`}>
+      <Icon className={`text-sm ${config.color}`} />
+      <span className={`text-xs font-semibold ${config.color}`}>{config.label}</span>
+    </div>
+  );
+};
 
 // Stat Card Component
 const StatCard = ({ icon, title, value, color = 'text-white' }) => (
@@ -30,6 +69,52 @@ const StatCard = ({ icon, title, value, color = 'text-white' }) => (
     <div className="text-2xl text-slate-500">{icon}</div>
   </div>
 );
+
+// Account Status Card with Badge
+const AccountStatusCard = ({ status }) => {
+  const statusConfig = {
+    'Verified': {
+      icon: FaCertificate,
+      color: 'text-green-500',
+      bgColor: 'bg-green-500/10',
+      borderColor: 'border-green-500/50',
+      label: 'Verified',
+      starColor: 'text-green-500'
+    },
+    'Pending': {
+      icon: FaExclamationCircle,
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-500/10',
+      borderColor: 'border-amber-500/50',
+      label: 'Pending',
+      starColor: 'text-amber-500'
+    },
+    'Rejected': {
+      icon: FaTimesCircle,
+      color: 'text-red-500',
+      bgColor: 'bg-red-500/10',
+      borderColor: 'border-red-500/50',
+      label: 'Rejected',
+      starColor: 'text-red-500'
+    }
+  };
+
+  const config = statusConfig[status] || statusConfig['Pending'];
+  const Icon = config.icon;
+
+  return (
+    <div className={`p-5 rounded-xl border ${config.bgColor} ${config.borderColor} flex items-start justify-between`}>
+      <div>
+        <p className="text-sm text-slate-400 mb-2">Account Status</p>
+        <div className="flex items-center gap-2">
+          <Icon className={`text-xl ${config.color}`} />
+          <p className={`text-2xl font-bold ${config.color}`}>{config.label}</p>
+        </div>
+      </div>
+      <FaStar className={`text-2xl ${config.starColor}`} />
+    </div>
+  );
+};
 
 // Crypto Asset Row Component
 const CryptoAssetRow = ({ icon, name, ticker, price, change, isPositive, loading }) => (
@@ -168,7 +253,12 @@ const Dashboard = ({
               </div>
             )}
             <div>
-              <h2 className="text-xl font-bold text-white">Welcome back, {userProfile?.name || 'User'}!</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-xl font-bold text-white">Welcome back, {userProfile?.name || 'User'}!</h2>
+                {userProfile?.accountStatus && (
+                  <VerificationBadge status={userProfile.accountStatus} />
+                )}
+              </div>
               <p className="text-sm text-slate-400">{userProfile?.email}</p>
             </div>
           </div>
@@ -182,7 +272,7 @@ const Dashboard = ({
 
         {/* Header Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard icon={<FaStar />} title="Account Status" value={accountStatus} color="text-blue-400" />
+          <AccountStatusCard status={accountStatus} />
           <StatCard icon={<FaArrowCircleUp />} title="Deposit" value={`$${deposit.toLocaleString()}`} />
           <StatCard icon={<FaChartLine />} title="Profit" value={`$${profit.toLocaleString()}`} color="text-green-400" />
           <StatCard icon={<FaArrowCircleDown />} title="Total Withdrawal" value={`$${withdrawal.toLocaleString()}`} color="text-red-400" />
