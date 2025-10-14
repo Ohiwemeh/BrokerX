@@ -61,12 +61,12 @@ const VerificationBadge = ({ status }) => {
 
 // Stat Card Component
 const StatCard = ({ icon, title, value, color = 'text-white' }) => (
-  <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 flex items-start justify-between">
-    <div>
-      <p className="text-sm text-slate-400 mb-1">{title}</p>
-      <p className={`text-2xl font-semibold ${color}`}>{value}</p>
+  <div className="bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-700 flex items-start justify-between">
+    <div className="min-w-0">
+      <p className="text-xs sm:text-sm text-slate-400 mb-1">{title}</p>
+      <p className={`text-lg sm:text-xl md:text-2xl font-semibold ${color} truncate`}>{value}</p>
     </div>
-    <div className="text-2xl text-slate-500">{icon}</div>
+    <div className="text-xl sm:text-2xl text-slate-500 flex-shrink-0 ml-2">{icon}</div>
   </div>
 );
 
@@ -103,38 +103,40 @@ const AccountStatusCard = ({ status }) => {
   const Icon = config.icon;
 
   return (
-    <div className={`p-5 rounded-xl border ${config.bgColor} ${config.borderColor} flex items-start justify-between`}>
-      <div>
-        <p className="text-sm text-slate-400 mb-2">Account Status</p>
+    <div className={`p-4 sm:p-5 rounded-xl border ${config.bgColor} ${config.borderColor} flex items-start justify-between`}>
+      <div className="min-w-0">
+        <p className="text-xs sm:text-sm text-slate-400 mb-2">Account Status</p>
         <div className="flex items-center gap-2">
-          <Icon className={`text-xl ${config.color}`} />
-          <p className={`text-2xl font-bold ${config.color}`}>{config.label}</p>
+          <Icon className={`text-lg sm:text-xl ${config.color} flex-shrink-0`} />
+          <p className={`text-lg sm:text-xl md:text-2xl font-bold ${config.color} truncate`}>{config.label}</p>
         </div>
       </div>
-      <FaStar className={`text-2xl ${config.starColor}`} />
+      <FaStar className={`text-xl sm:text-2xl ${config.starColor} flex-shrink-0 ml-2`} />
     </div>
   );
 };
 
 // Crypto Asset Row Component
 const CryptoAssetRow = ({ icon, name, ticker, price, change, isPositive, loading }) => (
-  <div className="bg-slate-800 p-4 rounded-xl flex justify-between items-center border border-slate-700 hover:bg-slate-700/50 transition-colors cursor-pointer">
-    <div className="flex items-center gap-4">
-      <div className="text-4xl">{icon}</div>
-      <div>
-        <p className="font-semibold text-white">{name} <span className="text-slate-400">{ticker}</span></p>
+  <div className="bg-slate-800 p-3 sm:p-4 rounded-xl flex justify-between items-center border border-slate-700 hover:bg-slate-700/50 transition-colors cursor-pointer">
+    <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0">
+      <div className="text-2xl sm:text-3xl md:text-4xl flex-shrink-0">{icon}</div>
+      <div className="min-w-0">
+        <p className="font-semibold text-white text-sm sm:text-base truncate">
+          {name} <span className="text-slate-400 text-xs sm:text-sm">{ticker}</span>
+        </p>
         {loading ? (
-          <div className="h-5 w-24 bg-slate-700 animate-pulse rounded"></div>
+          <div className="h-4 sm:h-5 w-20 sm:w-24 bg-slate-700 animate-pulse rounded"></div>
         ) : (
-          <p className="text-slate-200">${formatPrice(price)}</p>
+          <p className="text-xs sm:text-sm text-slate-400">${formatPrice(price)}</p>
         )}
       </div>
     </div>
     {loading ? (
-      <div className="h-6 w-16 bg-slate-700 animate-pulse rounded-full"></div>
+      <div className="h-6 sm:h-8 w-12 sm:w-16 bg-slate-700 animate-pulse rounded flex-shrink-0"></div>
     ) : (
-      <div className={`px-3 py-1 text-sm font-medium rounded-full ${isPositive ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-        {formatPercentage(change)}
+      <div className={`text-right flex-shrink-0 ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+        <p className="font-semibold text-xs sm:text-sm md:text-base">{formatPercentage(change)}</p>
       </div>
     )}
   </div>
@@ -142,15 +144,12 @@ const CryptoAssetRow = ({ icon, name, ticker, price, change, isPositive, loading
 
 // Empty State Component
 const EmptyState = ({ title, message, buttonText }) => (
-    <div className="text-center py-10">
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
-        <p className="text-slate-400 mt-1">{message}</p>
-       <Link 
-  to="/depositpage" 
-  className="mt-4 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
->
-  <FaPlus/> {buttonText}
-</Link>
+    <div className="text-center py-8 sm:py-10 px-4">
+        <h3 className="text-base sm:text-lg font-semibold text-white">{title}</h3>
+        <p className="text-sm sm:text-base text-slate-400 mt-1">{message}</p>
+        <button className="mt-4 bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base font-semibold hover:bg-blue-700 transition w-full sm:w-auto">
+            {buttonText}
+        </button>
     </div>
 );
 
@@ -237,55 +236,55 @@ const Dashboard = ({
     <div className="min-h-screen flex bg-slate-900 text-white font-sans">
       
 
-      <main className="flex-1 p-4 md:p-8 space-y-8 overflow-y-auto">
+      <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 md:space-y-8 overflow-y-auto">
         {/* User Profile Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center gap-3 sm:gap-4">
             {userProfile?.profileImageUrl ? (
               <img 
                 src={userProfile.profileImageUrl} 
                 alt={userProfile.name} 
-                className="w-12 h-12 rounded-full object-cover border-2 border-blue-500"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-blue-500 flex-shrink-0"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center border-2 border-slate-600">
-                <FaUser className="text-slate-400 text-xl" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-700 flex items-center justify-center border-2 border-slate-600 flex-shrink-0">
+                <FaUser className="text-slate-400 text-lg sm:text-xl" />
               </div>
             )}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-xl font-bold text-white">Welcome back, {userProfile?.name || 'User'}!</h2>
+            <div className="min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                <h2 className="text-base sm:text-lg md:text-xl font-bold text-white truncate">Welcome back, {userProfile?.name || 'User'}!</h2>
                 {userProfile?.accountStatus && (
                   <VerificationBadge status={userProfile.accountStatus} />
                 )}
               </div>
-              <p className="text-sm text-slate-400">{userProfile?.email}</p>
+              <p className="text-xs sm:text-sm text-slate-400 truncate">{userProfile?.email}</p>
             </div>
           </div>
           <Link 
             to="/markets" 
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition"
+            className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition text-center text-sm sm:text-base"
           >
             View Markets
           </Link>
         </div>
 
         {/* Header Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           <AccountStatusCard status={accountStatus} />
           <StatCard icon={<FaArrowCircleUp />} title="Deposit" value={`$${deposit.toLocaleString()}`} />
           <StatCard icon={<FaChartLine />} title="Profit" value={`$${profit.toLocaleString()}`} color="text-green-400" />
           <StatCard icon={<FaArrowCircleDown />} title="Total Withdrawal" value={`$${withdrawal.toLocaleString()}`} color="text-red-400" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6 md:space-y-8">
                  {/* Market Activity Chart */}
-                <div className="bg-slate-800 rounded-xl p-4 md:p-6 border border-slate-700 h-80 flex flex-col">
-                    <h2 className="text-lg font-semibold mb-4 text-white">Market Activity</h2>
+                <div className="bg-slate-800 rounded-xl p-3 sm:p-4 md:p-6 border border-slate-700 h-64 sm:h-72 md:h-80 flex flex-col">
+                    <h2 className="text-base sm:text-lg font-semibold mb-2 sm:mb-4 text-white">Market Activity</h2>
                     {hasChartData ? (
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                                 <defs>
                                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
@@ -306,32 +305,32 @@ const Dashboard = ({
                 </div>
 
                 {/* Transactions Table */}
-                <div className="bg-slate-800 p-4 md:p-6 rounded-xl border border-slate-700">
-                  <h2 className="text-xl font-semibold mb-4 text-white">Transactions</h2>
+                <div className="bg-slate-800 p-3 sm:p-4 md:p-6 rounded-xl border border-slate-700">
+                  <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-3 sm:mb-4 text-white">Transactions</h2>
                   {hasTransactions ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
+                      <div className="overflow-x-auto -mx-3 sm:mx-0">
+                        <table className="w-full text-left text-xs sm:text-sm min-w-[600px]">
                             <thead className="text-slate-400 border-b border-slate-700">
                             <tr>
-                                <th className="py-3 px-2">Date</th>
-                                <th className="py-3 px-2">Transaction ID</th>
-                                <th className="py-3 px-2">Type</th>
-                                <th className="py-3 px-2">Name</th>
-                                <th className="py-3 px-2">Value</th>
-                                <th className="py-3 px-2">Status</th>
-                                <th className="py-3 px-2 text-right">Action</th>
+                                <th className="py-2 sm:py-3 px-2">Date</th>
+                                <th className="py-2 sm:py-3 px-2">Transaction ID</th>
+                                <th className="py-2 sm:py-3 px-2">Type</th>
+                                <th className="py-2 sm:py-3 px-2">Name</th>
+                                <th className="py-2 sm:py-3 px-2">Value</th>
+                                <th className="py-2 sm:py-3 px-2">Status</th>
+                                <th className="py-2 sm:py-3 px-2 text-right">Action</th>
                             </tr>
                             </thead>
                             <tbody>
                             {transactions.map((tx, index) => (
                                 <tr key={index} className="border-b border-slate-800 hover:bg-slate-700/50">
-                                <td className="py-4 px-2">{tx.date}</td>
-                                <td className="font-mono text-slate-400 px-2">{tx.id}</td>
-                                <td className="px-2">{tx.type}</td>
-                                <td className="px-2">{tx.name}</td>
-                                <td className="px-2">{tx.value}</td>
+                                <td className="py-3 sm:py-4 px-2 whitespace-nowrap">{tx.date}</td>
+                                <td className="font-mono text-slate-400 px-2 whitespace-nowrap">{tx.id}</td>
+                                <td className="px-2 whitespace-nowrap">{tx.type}</td>
+                                <td className="px-2 whitespace-nowrap">{tx.name}</td>
+                                <td className="px-2 whitespace-nowrap">{tx.value}</td>
                                 <td className="px-2">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
                                         tx.status === "Completed" ? "bg-green-500/20 text-green-400"
                                         : tx.status === "Failed" ? "bg-red-500/20 text-red-400"
                                         : "bg-purple-500/20 text-purple-400"
@@ -346,8 +345,8 @@ const Dashboard = ({
                             ))}
                             </tbody>
                         </table>
-                        <div className="flex justify-center mt-6">
-                            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+                        <div className="flex justify-center mt-4 sm:mt-6">
+                            <button className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base font-semibold hover:bg-blue-700 transition w-full sm:w-auto">
                                 View More
                             </button>
                         </div>
@@ -359,7 +358,7 @@ const Dashboard = ({
             </div>
           
             {/* Side Column for Crypto Prices */}
-            <div className="lg:col-span-1 space-y-4">
+            <div className="lg:col-span-1 space-y-3 sm:space-y-4">
                 <CryptoAssetRow 
                   icon={<FaBitcoin className="text-orange-500" />} 
                   name="Bitcoin" 
