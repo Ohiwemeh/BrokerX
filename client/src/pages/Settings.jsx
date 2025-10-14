@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { profileService } from '../api/services';
 import { 
   FaUserCircle, 
   FaShieldAlt, 
@@ -91,14 +92,17 @@ const DocumentUploader = ({ title, file, onFileChange }) => {
 
 const ProfileSettings = () => {
   const [formData, setFormData] = useState({
-    // --- ENHANCEMENT: Cleaner initial state ---
     firstName: '',
     lastName: '',
     dob: '',
     address: '',
     zipCode: '',
     city: '',
+    phoneNumber: '',
   });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -124,17 +128,70 @@ const ProfileSettings = () => {
     profilePicInputRef.current.click();
   };
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const profile = await profileService.getProfile();
+        setFormData({
+          firstName: profile.firstName || '',
+          lastName: profile.lastName || '',
+          dob: profile.dob ? profile.dob.split('T')[0] : '',
+          address: profile.address || '',
+          zipCode: profile.zipCode || '',
+          city: profile.city || '',
+          phoneNumber: profile.phoneNumber || '',
+        });
+        if (profile.profileImageUrl) {
+          setImagePreview(profile.profileImageUrl);
+        }
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+      }
+    };
+    loadProfile();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    if (profileImage) console.log("Image to upload:", profileImage);
-    if (idFront) console.log("ID Front to upload:", idFront);
-    if (idBack) console.log("ID Back to upload:", idBack);
-    alert('Profile update request submitted!');
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      // Update profile
+      await profileService.updateProfile(formData);
+
+      // Upload profile image if changed
+      if (profileImage) {
+        await profileService.uploadProfileImage(profileImage);
+      }
+
+      // Upload ID documents if provided
+      if (idFront || idBack) {
+        await profileService.uploadID(idFront, idBack);
+      }
+
+      setSuccess('Profile updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded text-sm">
+          {success}
+        </div>
+      )}
       <div className="flex items-center gap-6 pb-6 border-b border-slate-700">
         <div className="relative">
           {imagePreview ? (
@@ -179,6 +236,7 @@ const ProfileSettings = () => {
         <FormInput id="zipCode" label="Postal/Zip Code" placeholder="Enter zip code" value={formData.zipCode} onChange={handleChange} />
         <FormInput id="city" label="City/Town" placeholder="Enter your city" value={formData.city} onChange={handleChange} />
       </div>
+      <FormInput id="phoneNumber" label="Phone Number" placeholder="Enter your phone number" value={formData.phoneNumber} onChange={handleChange} />
 
       <div className="border-t border-slate-700 pt-6">
         <h2 className="text-xl font-bold text-white mb-1">Identity Verification</h2>
@@ -190,8 +248,12 @@ const ProfileSettings = () => {
       </div>
       
       <div className="pt-4 flex justify-end">
-        <button type="submit" className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">
-          Save Changes
+        <button 
+          type="submit" 
+          disabled={loading}
+          className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
     </form>
@@ -205,24 +267,73 @@ const SecuritySettings = () => {
         confirmPassword: ''
     });
     const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState('');
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            try {
+                const profile = await profileService.getProfile();
+                setIs2FAEnabled(profile.twoFactorEnabled || false);
+            } catch (err) {
+                console.error('Failed to load 2FA status:', err);
+            }
+        };
+        loadProfile();
+    }, []);
 
     const handlePasswordChange = (e) => {
         const { id, value } = e.target;
         setPasswords(prev => ({ ...prev, [id]: value }));
     };
 
-    const handlePasswordSubmit = (e) => {
+    const handlePasswordSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setSuccess('');
+
         if (passwords.newPassword !== passwords.confirmPassword) {
-            alert("New passwords do not match!");
+            setError("New passwords do not match!");
             return;
         }
-        console.log("Changing password...");
-        alert("Password change request submitted!");
+
+        setLoading(true);
+
+        try {
+            await profileService.changePassword(passwords.currentPassword, passwords.newPassword);
+            setSuccess('Password changed successfully!');
+            setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to change password');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handle2FAToggle = async () => {
+        try {
+            const result = await profileService.toggle2FA();
+            setIs2FAEnabled(result.twoFactorEnabled);
+        } catch (err) {
+            console.error('Failed to toggle 2FA:', err);
+        }
     };
 
     return (
         <div className="space-y-12">
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm">
+                    {error}
+                </div>
+            )}
+            {success && (
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded text-sm">
+                    {success}
+                </div>
+            )}
+
             {/* Change Password Section */}
             <div>
                 <h2 className="text-xl font-bold text-white mb-1">Change Password</h2>
@@ -232,8 +343,12 @@ const SecuritySettings = () => {
                     <FormInput id="newPassword" label="New Password" type="password" value={passwords.newPassword} onChange={handlePasswordChange} />
                     <FormInput id="confirmPassword" label="Confirm New Password" type="password" value={passwords.confirmPassword} onChange={handlePasswordChange} />
                     <div className="pt-2 flex justify-end">
-                        <button type="submit" className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">
-                            Update Password
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? 'Updating...' : 'Update Password'}
                         </button>
                     </div>
                 </form>
@@ -255,7 +370,7 @@ const SecuritySettings = () => {
                     </div>
                     {/* Toggle Switch */}
                     <button 
-                        onClick={() => setIs2FAEnabled(!is2FAEnabled)}
+                        onClick={handle2FAToggle}
                         className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${is2FAEnabled ? 'bg-blue-600' : 'bg-slate-600'}`}
                     >
                         <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${is2FAEnabled ? 'translate-x-6' : 'translate-x-1'}`} />

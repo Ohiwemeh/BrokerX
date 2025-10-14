@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { 
   FaBitcoin, 
@@ -12,12 +12,10 @@ import {
   FaEllipsisH,
   FaPlus
 } from 'react-icons/fa';
-import {Link} from 'react-router'
-
+import {Link} from 'react-router';
+import { transactionService } from '../api/services';
 
 // --- Reusable Sub-Components ---
-
-
 
 
 // Stat Card Component
@@ -68,13 +66,46 @@ const Dashboard = ({
   chartData = [],
   bitcoinPrice = 45000.00, // Example data
   ethereumPrice = 3200.00, // Example data
-  profit = 1250.75, // Example data
-  deposit = 5000.00, // Example data
-  withdrawal = 1200.00, // Example data
-  transactions = [] // Start with empty transactions
 }) => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const data = await transactionService.getDashboardStats();
+        setDashboardData(data);
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+        setError(err.response?.data?.message || 'Failed to load dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const transactions = dashboardData?.transactions || [];
+  const profit = dashboardData?.profit || 0;
+  const deposit = dashboardData?.totalDeposit || 0;
+  const withdrawal = dashboardData?.totalWithdrawal || 0;
+  const accountStatus = dashboardData?.accountStatus || 'Active';
+  
   const hasTransactions = transactions.length > 0;
   const hasChartData = chartData.length > 0;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-slate-900 text-white font-sans">
@@ -83,10 +114,10 @@ const Dashboard = ({
       <main className="flex-1 p-4 md:p-8 space-y-8 overflow-y-auto">
         {/* Header Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard icon={<FaStar />} title="Account Status" value="Active" color="text-blue-400" />
-          <StatCard icon={<FaArrowCircleUp />} title="Deposit" value={`₱${deposit.toLocaleString()}`} />
-          <StatCard icon={<FaChartLine />} title="Profit" value={`₱${profit.toLocaleString()}`} color="text-green-400" />
-          <StatCard icon={<FaArrowCircleDown />} title="Total Withdrawal" value={`₱${withdrawal.toLocaleString()}`} color="text-red-400" />
+          <StatCard icon={<FaStar />} title="Account Status" value={accountStatus} color="text-blue-400" />
+          <StatCard icon={<FaArrowCircleUp />} title="Deposit" value={`$${deposit.toLocaleString()}`} />
+          <StatCard icon={<FaChartLine />} title="Profit" value={`$${profit.toLocaleString()}`} color="text-green-400" />
+          <StatCard icon={<FaArrowCircleDown />} title="Total Withdrawal" value={`$${withdrawal.toLocaleString()}`} color="text-red-400" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

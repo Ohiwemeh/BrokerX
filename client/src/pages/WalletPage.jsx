@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { walletService } from '../api/services';
 import { 
   FaBullhorn, 
   FaTimes, 
@@ -121,12 +122,42 @@ const TradingAccountCard = ({ accountId, status, balance, margin, leverage, isAc
 const WalletPage = () => {
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const [activeTab, setActiveTab] = useState('real'); // 'real' or 'demo'
+  const [walletData, setWalletData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWalletData = async () => {
+      try {
+        const data = await walletService.getWallet();
+        setWalletData(data);
+      } catch (err) {
+        console.error('Failed to load wallet data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchWalletData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-4 md:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-white">Loading wallet...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8 space-y-8">
       {isBannerVisible && <PromoBanner onDismiss={() => setIsBannerVisible(false)} />}
       
-      <WalletCard walletId="W06318044USD" balance={0.00} />
+      <WalletCard 
+        walletId={walletData?.walletId || 'N/A'} 
+        balance={walletData?.balance || 0} 
+      />
 
       <div>
         <div className="flex justify-between items-center mb-4">
@@ -154,12 +185,12 @@ const WalletPage = () => {
         <div className="space-y-4">
             {activeTab === 'real' && (
                 <TradingAccountCard 
-                    accountId="#519939299"
-                    status="Not Activated"
-                    isActivated={false}
-                    balance={0.00}
-                    margin={0.00}
-                    leverage="1:Unlimited"
+                    accountId={walletData?.tradingAccount?.accountId || 'N/A'}
+                    status={walletData?.tradingAccount?.isActivated ? 'Activated' : 'Not Activated'}
+                    isActivated={walletData?.tradingAccount?.isActivated || false}
+                    balance={walletData?.tradingAccount?.balance || 0}
+                    margin={walletData?.tradingAccount?.freeMargin || 0}
+                    leverage={walletData?.tradingAccount?.leverage || '1:Unlimited'}
                 />
             )}
             {activeTab === 'demo' && (

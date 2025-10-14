@@ -1,6 +1,34 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router";
+import { authService } from "../../api/services";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      await authService.login(formData.email, formData.password);
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col justify-between bg-white">
       {/* Top bar */}
@@ -29,42 +57,69 @@ const Login = () => {
             Access all that BrokerX has to offer with a single account.
           </p>
 
-          {/* Email field */}
-          <div className="mb-4">
-            <label
-              htmlFor="email"
-              className="block text-sm font-semibold mb-1"
-            >
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              placeholder="Your email address"
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+              {error}
+            </div>
+          )}
 
-          {/* Password field */}
-          <div className="mb-4">
-            <label
-              htmlFor="password"
-              className="block text-sm font-semibold mb-1"
-            >
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              placeholder="Your password"
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          <form onSubmit={handleSubmit}>
+            {/* Email field */}
+            <div className="mb-4">
+              <label
+                htmlFor="email"
+                className="block text-sm font-semibold mb-1"
+              >
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Your email address"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
 
-          {/* Sign In button */}
-          <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg py-2 transition">
-            Sign In
-          </button>
+            {/* Password field */}
+            <div className="mb-4">
+              <label
+                htmlFor="password"
+                className="block text-sm font-semibold mb-1"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Your password"
+                  className="w-full border rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+            </div>
+
+            {/* Sign In button */}
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg py-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
 
           {/* Footer note */}
           <p className="text-xs text-gray-500 mt-4 text-center">

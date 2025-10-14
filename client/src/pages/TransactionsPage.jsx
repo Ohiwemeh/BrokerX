@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { transactionService } from '../api/services';
 import { 
   FaChevronLeft, 
   FaCalendarAlt, 
@@ -102,22 +103,43 @@ const TransactionsPage = () => {
   const methodOptions = ['Credit/Debit Card', 'Bank Transfer', 'USDT'];
   const statusOptions = ['Completed', 'Pending', 'Failed'];
 
-  // Mock transactions data (empty for now, for the empty state)
-  const transactions = []; // Example: [{ date: '2023-01-01', id: 'TXN123', type: 'Deposit', method: 'Bank Transfer', value: '1000 USD', status: 'Completed' }]
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const totalTransactions = transactions.length;
 
-  const handleApplyFilters = () => {
-    console.log({
-      selectedDateRange,
-      selectedType,
-      selectedMethod,
-      selectedStatus,
-      itemsPerPage,
-      currentPage,
-    });
-    // In a real app, you would dispatch an action or make an API call here
-    // to fetch transactions based on the selected filters.
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const fetchTransactions = async () => {
+    setLoading(true);
+    try {
+      const filters = {
+        type: selectedType,
+        method: selectedMethod,
+        status: selectedStatus,
+        page: currentPage,
+        limit: itemsPerPage
+      };
+      const data = await transactionService.getTransactions(filters);
+      setTransactions(data.transactions || []);
+    } catch (err) {
+      console.error('Failed to load transactions:', err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleApplyFilters = () => {
+    setCurrentPage(1);
+    fetchTransactions();
+  };
+
+  useEffect(() => {
+    if (!loading) {
+      fetchTransactions();
+    }
+  }, [currentPage, itemsPerPage]);
 
   return (
     <div className="min-h-screen p-4 md:p-8 space-y-8 text-white">
@@ -164,7 +186,14 @@ const TransactionsPage = () => {
         </div>
 
         {/* Transactions Table/Empty State */}
-        {totalTransactions > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-slate-400">Loading transactions...</p>
+            </div>
+          </div>
+        ) : totalTransactions > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm mt-8">
               <thead className="text-slate-400 border-b border-slate-700">
@@ -179,14 +208,13 @@ const TransactionsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {/* Example of a transaction row */}
-                {/* {transactions.map((tx, index) => (
+                {transactions.map((tx, index) => (
                   <tr key={index} className="border-b border-slate-800 hover:bg-slate-700/50">
-                    <td className="py-4 px-2">{tx.date}</td>
-                    <td className="font-mono text-slate-400 px-2">{tx.id}</td>
+                    <td className="py-4 px-2">{new Date(tx.createdAt).toLocaleDateString()}</td>
+                    <td className="font-mono text-slate-400 px-2">{tx.transactionId}</td>
                     <td className="px-2">{tx.type}</td>
                     <td className="px-2">{tx.method}</td>
-                    <td className="px-2">{tx.value}</td>
+                    <td className="px-2">${tx.amount} {tx.currency}</td>
                     <td className="px-2">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         tx.status === "Completed" ? "bg-green-500/20 text-green-400"
@@ -197,10 +225,10 @@ const TransactionsPage = () => {
                       </span>
                     </td>
                     <td className="text-right px-2">
-                      <button className="text-slate-400 hover:text-white text-lg"><FaEllipsisH /></button>
+                      <button className="text-slate-400 hover:text-white text-lg"><FaSearch /></button>
                     </td>
                   </tr>
-                ))} */}
+                ))}
               </tbody>
             </table>
           </div>

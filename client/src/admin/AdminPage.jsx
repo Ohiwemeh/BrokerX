@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { adminService } from '../api/services';
 import { 
   FaUsers, 
   FaSearch, 
@@ -13,62 +14,6 @@ import {
   FaEye,
   FaEyeSlash
 } from 'react-icons/fa';
-
-// --- MOCK DATA ---
-// In a real app, this would come from an API
-const mockUsers = [
-  {
-    id: 1,
-    name: 'Joseph Jegede',
-    email: 'joseph.j@example.com',
-    passwordHash: '$2a$12$G.o8v9p2zJ3K/9b7c6D5E4F3g2H1i0j',
-    status: 'Pending',
-    dateJoined: '2025-10-09',
-    balance: 500.00,
-    personalInfo: {
-      dob: '2004-04-29',
-      address: '123 Tech Avenue, Silicon Valley',
-      city: 'San Francisco',
-      zipCode: '94105'
-    },
-    idFrontImg: 'https://placehold.co/600x400/334155/E2E8F0?text=ID+Front',
-    idBackImg: 'https://placehold.co/600x400/334155/E2E8F0?text=ID+Back',
-  },
-  {
-    id: 2,
-    name: 'Alice Johnson',
-    email: 'alice.j@example.com',
-    passwordHash: '$2a$12$A.b1c2d3e4f5g6h7i8j9k0l/m1n2o3',
-    status: 'Verified',
-    dateJoined: '2025-10-08',
-    balance: 12550.75,
-    personalInfo: {
-      dob: '1998-11-15',
-      address: '456 Blockchain Blvd',
-      city: 'New York',
-      zipCode: '10001'
-    },
-    idFrontImg: 'https://placehold.co/600x400/334155/E2E8F0?text=ID+Front',
-    idBackImg: 'https://placehold.co/600x400/334155/E2E8F0?text=ID+Back',
-  },
-   {
-    id: 3,
-    name: 'Bob Smith',
-    email: 'bob.s@example.com',
-    passwordHash: '$2a$12$X.yZ9a8b7c6d5e4f3g2h1i0j/k9l8m',
-    status: 'Rejected',
-    dateJoined: '2025-10-07',
-    balance: 0.00,
-    personalInfo: {
-      dob: '2001-07-22',
-      address: '789 Crypto Lane',
-      city: 'Miami',
-      zipCode: '33101'
-    },
-    idFrontImg: 'https://placehold.co/600x400/334155/E2E8F0?text=ID+Front',
-    idBackImg: 'https://placehold.co/600x400/334155/E2E8F0?text=ID+Back',
-  },
-];
 
 // --- Reusable Sub-Components ---
 
@@ -104,18 +49,90 @@ const Modal = ({ title, children, onClose }) => (
 // --- Main Admin Page Component ---
 
 const AdminPage = () => {
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUserDetails, setSelectedUserDetails] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState(null);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    if (selectedUser) {
+      fetchUserDetails(selectedUser._id);
+    }
+  }, [selectedUser]);
+
+  const fetchUsers = async () => {
+    try {
+      const data = await adminService.getUsers({ search: searchTerm });
+      setUsers(data.users || []);
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserDetails = async (userId) => {
+    try {
+      const data = await adminService.getUser(userId);
+      setSelectedUserDetails(data);
+    } catch (err) {
+      console.error('Failed to load user details:', err);
+    }
+  };
 
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleVerifyUser = async () => {
+    if (!selectedUser) return;
+    try {
+      await adminService.verifyUser(selectedUser._id);
+      alert('User verified successfully!');
+      fetchUsers();
+      fetchUserDetails(selectedUser._id);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to verify user');
+    }
+  };
+
+  const handleRejectUser = async () => {
+    if (!selectedUser) return;
+    const reason = prompt('Enter rejection reason:');
+    if (!reason) return;
+    try {
+      await adminService.rejectUser(selectedUser._id, reason);
+      alert('User rejected');
+      fetchUsers();
+      fetchUserDetails(selectedUser._id);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to reject user');
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    try {
+      await adminService.deleteUser(selectedUser._id);
+      alert('User deleted successfully');
+      setSelectedUser(null);
+      setSelectedUserDetails(null);
+      fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete user');
+    }
+  };
 
   const openModal = (type) => {
       if (!selectedUser) return;
@@ -127,10 +144,27 @@ const AdminPage = () => {
           case 'addFunds':
               title = `Add Funds to ${selectedUser.name}`;
               content = (
-                  <form className="space-y-4">
+                  <form className="space-y-4" onSubmit={async (e) => {
+                      e.preventDefault();
+                      const amount = e.target.amount.value;
+                      const description = e.target.description.value;
+                      try {
+                          await adminService.addFunds(selectedUser._id, parseFloat(amount), description);
+                          alert('Funds added successfully!');
+                          setIsModalOpen(false);
+                          fetchUsers();
+                          fetchUserDetails(selectedUser._id);
+                      } catch (err) {
+                          alert(err.response?.data?.message || 'Failed to add funds');
+                      }
+                  }}>
                       <div>
                           <label className="block text-sm font-medium text-slate-400 mb-2">Amount (USD)</label>
-                          <input type="number" placeholder="0.00" className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                          <input name="amount" type="number" placeholder="0.00" required className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                      </div>
+                      <div>
+                          <label className="block text-sm font-medium text-slate-400 mb-2">Description</label>
+                          <input name="description" type="text" placeholder="Bonus, deposit, etc." className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                       </div>
                       <button type="submit" className="w-full bg-blue-600 font-bold py-2 rounded-lg hover:bg-blue-700 transition">Confirm Deposit</button>
                   </form>
@@ -139,14 +173,25 @@ const AdminPage = () => {
           case 'sendEmail':
               title = `Send Email to ${selectedUser.name}`;
                content = (
-                  <form className="space-y-4">
+                  <form className="space-y-4" onSubmit={async (e) => {
+                      e.preventDefault();
+                      const subject = e.target.subject.value;
+                      const message = e.target.message.value;
+                      try {
+                          await adminService.sendEmail(selectedUser._id, subject, message);
+                          alert('Email sent successfully!');
+                          setIsModalOpen(false);
+                      } catch (err) {
+                          alert(err.response?.data?.message || 'Failed to send email');
+                      }
+                  }}>
                       <div>
                           <label className="block text-sm font-medium text-slate-400 mb-2">Subject</label>
-                          <input type="text" placeholder="Email subject" className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                          <input name="subject" type="text" placeholder="Email subject" required className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                       </div>
                        <div>
                           <label className="block text-sm font-medium text-slate-400 mb-2">Message</label>
-                          <textarea rows="4" placeholder="Your message here..." className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                          <textarea name="message" rows="4" placeholder="Your message here..." required className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                       </div>
                       <button type="submit" className="w-full bg-blue-600 font-bold py-2 rounded-lg hover:bg-blue-700 transition">Send Email</button>
                   </form>
@@ -200,8 +245,8 @@ const AdminPage = () => {
                                 <p className="font-semibold text-white">{user.name}</p>
                                 <p className="text-sm text-slate-400">{user.email}</p>
                             </div>
-                            <span className={`px-2 py-1 text-xs font-bold rounded-full ${statusClasses[user.status]}`}>
-                                {user.status}
+                            <span className={`px-2 py-1 text-xs font-bold rounded-full ${statusClasses[user.accountStatus] || 'bg-gray-500/10 text-gray-400'}`}>
+                                {user.accountStatus}
                             </span>
                         </div>
                     </li>
@@ -220,13 +265,13 @@ const AdminPage = () => {
                 <div className="flex justify-between items-start">
                     <div>
                         <h2 className="text-3xl font-bold">{selectedUser.name}</h2>
-                        <p className="text-slate-400">Joined on {selectedUser.dateJoined}</p>
+                        <p className="text-slate-400">Joined on {new Date(selectedUser.createdAt).toLocaleDateString()}</p>
                     </div>
                      <div className="flex gap-2">
-                         <button className="bg-green-600/80 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg transition">
+                         <button onClick={handleVerifyUser} className="bg-green-600/80 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg transition">
                             <FaUserCheck className="inline mr-2"/> Verify
                          </button>
-                         <button className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-4 rounded-lg transition">
+                         <button onClick={handleRejectUser} className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-4 rounded-lg transition">
                             <FaUserTimes className="inline mr-2"/> Reject
                          </button>
                      </div>
@@ -236,11 +281,11 @@ const AdminPage = () => {
             {/* Personal Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <InfoField label="Email Address" value={selectedUser.email} />
-                <InfoField label="Date of Birth" value={selectedUser.personalInfo.dob} />
-                <InfoField label="Wallet Balance" value={`$${selectedUser.balance.toLocaleString()}`} />
-                <InfoField label="Address" value={selectedUser.personalInfo.address} />
-                <InfoField label="City" value={selectedUser.personalInfo.city} />
-                <InfoField label="Zip Code" value={selectedUser.personalInfo.zipCode} />
+                <InfoField label="Date of Birth" value={selectedUser.dob ? new Date(selectedUser.dob).toLocaleDateString() : 'N/A'} />
+                <InfoField label="Wallet Balance" value={`$${selectedUser.balance?.toLocaleString() || 0}`} />
+                <InfoField label="Address" value={selectedUser.address || 'N/A'} />
+                <InfoField label="City" value={selectedUser.city || 'N/A'} />
+                <InfoField label="Zip Code" value={selectedUser.zipCode || 'N/A'} />
             </div>
 
              {/* Security */}
@@ -249,7 +294,7 @@ const AdminPage = () => {
                  <div className="bg-slate-800 p-4 rounded-lg flex items-center justify-between">
                      <div className="flex items-center gap-4">
                          <FaKey className="text-2xl text-slate-400"/>
-                         <InfoField label="Password Hash" value={passwordVisible ? selectedUser.passwordHash : '••••••••••••••••••••••••••••••••••'}/>
+                         <InfoField label="Password Hash" value={passwordVisible ? selectedUser.password : '••••••••••••••••••••••••••••••••••'}/>
                      </div>
                      <button onClick={() => setPasswordVisible(!passwordVisible)} className="text-slate-400 hover:text-white text-xl">
                          {passwordVisible ? <FaEyeSlash /> : <FaEye />}
@@ -263,11 +308,23 @@ const AdminPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <p className="text-sm font-semibold text-slate-400 mb-2">ID Front</p>
-                        <img src={selectedUser.idFrontImg} alt="ID Front" className="rounded-lg border-2 border-slate-700"/>
+                        {selectedUser.idFrontUrl ? (
+                          <img src={selectedUser.idFrontUrl} alt="ID Front" className="rounded-lg border-2 border-slate-700"/>
+                        ) : (
+                          <div className="bg-slate-700 rounded-lg border-2 border-slate-600 h-48 flex items-center justify-center">
+                            <p className="text-slate-400">No document uploaded</p>
+                          </div>
+                        )}
                     </div>
                     <div>
                         <p className="text-sm font-semibold text-slate-400 mb-2">ID Back</p>
-                        <img src={selectedUser.idBackImg} alt="ID Back" className="rounded-lg border-2 border-slate-700"/>
+                        {selectedUser.idBackUrl ? (
+                          <img src={selectedUser.idBackUrl} alt="ID Back" className="rounded-lg border-2 border-slate-700"/>
+                        ) : (
+                          <div className="bg-slate-700 rounded-lg border-2 border-slate-600 h-48 flex items-center justify-center">
+                            <p className="text-slate-400">No document uploaded</p>
+                          </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -275,11 +332,27 @@ const AdminPage = () => {
             {/* Admin Actions */}
             <div>
                 <h3 className="text-lg font-bold text-slate-300 mb-4">Admin Actions</h3>
+                {selectedUser.accountStatus !== 'Verified' && (
+                  <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-400/30 rounded-lg text-sm text-yellow-300">
+                    ⚠️ User must be verified before you can add funds
+                  </div>
+                )}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <ActionButton icon={<FaPlus/>} label="Add Funds" onClick={() => openModal('addFunds')} className="bg-blue-600 hover:bg-blue-500"/>
+                    <button 
+                      onClick={() => selectedUser.accountStatus === 'Verified' ? openModal('addFunds') : alert('User must be verified before adding funds')}
+                      disabled={selectedUser.accountStatus !== 'Verified'}
+                      className={`flex items-center justify-center gap-2 w-full text-sm font-semibold py-2 px-4 rounded-lg transition ${
+                        selectedUser.accountStatus === 'Verified' 
+                          ? 'bg-blue-600 hover:bg-blue-500' 
+                          : 'bg-slate-600 opacity-50 cursor-not-allowed'
+                      }`}
+                    >
+                      <FaPlus/>
+                      <span>Add Funds</span>
+                    </button>
                     <ActionButton icon={<FaEnvelope/>} label="Send Email" onClick={() => openModal('sendEmail')}/>
                     <ActionButton icon={<FaKey/>} label="Generate Code" onClick={() => alert(`Generated Code: ${Math.random().toString(36).substring(2, 10).toUpperCase()}`)}/>
-                    <ActionButton icon={<FaTrash/>} label="Delete User" onClick={() => confirm('Are you sure you want to delete this user?')} className="bg-red-600/80 hover:bg-red-500"/>
+                    <ActionButton icon={<FaTrash/>} label="Delete User" onClick={handleDeleteUser} className="bg-red-600/80 hover:bg-red-500"/>
                 </div>
             </div>
           </div>

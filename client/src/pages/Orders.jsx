@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { transactionService } from '../api/services';
 import { 
   FaCreditCard, 
   FaUniversity, 
@@ -46,10 +47,48 @@ const DepositPage = () => {
   const [selectedMethod, setSelectedMethod] = useState('card');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('PHP, ₱');
-  
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
   // A mock exchange rate
   const NGN_TO_USD_RATE = 0.97;
   const amountInUSD = (parseFloat(amount) * NGN_TO_USD_RATE).toFixed(2);
+
+  const handleDeposit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!amount || parseFloat(amount) <= 0) {
+      setError('Please enter a valid amount');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const methodMap = {
+        'card': 'Credit/Debit Card',
+        'bank': 'Bank Transfer',
+        'usdt': 'USDT'
+      };
+
+      await transactionService.createDeposit(
+        parseFloat(amount),
+        methodMap[selectedMethod],
+        'USD'
+      );
+
+      setSuccess('Deposit request submitted successfully! Your request is being processed.');
+      setAmount('');
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create deposit request');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     // Assuming this component is rendered within our main layout with the sidebar
@@ -73,6 +112,16 @@ const DepositPage = () => {
         {/* Right Column: Deposit Details */}
         <div className="lg:col-span-2">
           <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 space-y-6">
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded text-sm">
+                {success}
+              </div>
+            )}
             <div className="flex items-center gap-2 text-sm text-green-400">
               <FaShieldAlt />
               <span>The connection is secured</span>
@@ -118,10 +167,11 @@ const DepositPage = () => {
             
             <div className="border-t border-slate-700 pt-6">
               <button
-                disabled={!amount || parseFloat(amount) <= 0}
+                onClick={handleDeposit}
+                disabled={!amount || parseFloat(amount) <= 0 || loading}
                 className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Fund
+                {loading ? 'Processing...' : 'Fund'}
               </button>
               <p className="text-center text-sm text-slate-500 mt-3">
                 Commission fee 3%
