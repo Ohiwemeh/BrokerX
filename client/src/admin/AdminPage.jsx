@@ -227,6 +227,20 @@ const AdminPage = () => {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-slate-400">Loading users...</p>
+              </div>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+              <FaUsers className="text-6xl mb-4" />
+              <p className="text-lg font-semibold">No users found</p>
+              <p className="text-sm">Try adjusting your search</p>
+            </div>
+          ) : (
           <ul className="divide-y divide-slate-800">
             {filteredUsers.map(user => {
                 const statusClasses = {
@@ -236,9 +250,9 @@ const AdminPage = () => {
                 };
                 return (
                     <li
-                        key={user.id}
+                        key={user._id}
                         onClick={() => setSelectedUser(user)}
-                        className={`p-4 cursor-pointer hover:bg-slate-700/50 transition-colors ${selectedUser?.id === user.id ? 'bg-slate-700' : ''}`}
+                        className={`p-4 cursor-pointer hover:bg-slate-700/50 transition-colors ${selectedUser?._id === user._id ? 'bg-slate-700' : ''}`}
                     >
                         <div className="flex justify-between items-center">
                             <div>
@@ -253,6 +267,7 @@ const AdminPage = () => {
                 );
             })}
           </ul>
+          )}
         </div>
       </aside>
 

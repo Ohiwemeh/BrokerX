@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router'; // Import Link and useLocation
+import { Link, useLocation, useNavigate } from 'react-router'; // Import Link and useLocation
 import { 
   FaSignOutAlt, 
   FaCog, 
@@ -23,6 +23,13 @@ const navLinks = [
 const Sidebar = () => {
   // Get the current location object
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
   return (
     <aside className="w-20 md:w-64 bg-slate-900 p-4 flex flex-col justify-between border-r border-slate-800">
@@ -51,7 +58,10 @@ const Sidebar = () => {
           })}
         </nav>
       </div>
-      <button className="flex items-center gap-4 p-2 rounded-lg text-slate-400 hover:bg-red-500/20 hover:text-red-400 transition-colors mt-10">
+      <button 
+        onClick={handleLogout}
+        className="flex items-center gap-4 p-2 rounded-lg text-slate-400 hover:bg-red-500/20 hover:text-red-400 transition-colors mt-10"
+      >
         <FaSignOutAlt className="text-xl flex-shrink-0" />
         <span className="hidden md:inline">Sign Out</span>
       </button>

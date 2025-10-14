@@ -10,10 +10,12 @@ import {
   FaArrowCircleDown, 
   FaChartLine,
   FaEllipsisH,
-  FaPlus
+  FaPlus,
+  FaUser
 } from 'react-icons/fa';
 import {Link} from 'react-router';
-import { transactionService } from '../api/services';
+import { transactionService, profileService } from '../api/services';
+import { getCryptoPrices, formatPrice, formatPercentage } from '../api/cryptoService';
 
 // --- Reusable Sub-Components ---
 
@@ -30,18 +32,26 @@ const StatCard = ({ icon, title, value, color = 'text-white' }) => (
 );
 
 // Crypto Asset Row Component
-const CryptoAssetRow = ({ icon, name, ticker, price, change, isPositive }) => (
+const CryptoAssetRow = ({ icon, name, ticker, price, change, isPositive, loading }) => (
   <div className="bg-slate-800 p-4 rounded-xl flex justify-between items-center border border-slate-700 hover:bg-slate-700/50 transition-colors cursor-pointer">
     <div className="flex items-center gap-4">
       <div className="text-4xl">{icon}</div>
       <div>
         <p className="font-semibold text-white">{name} <span className="text-slate-400">{ticker}</span></p>
-        <p className="text-slate-200">${price.toLocaleString()}</p>
+        {loading ? (
+          <div className="h-5 w-24 bg-slate-700 animate-pulse rounded"></div>
+        ) : (
+          <p className="text-slate-200">${formatPrice(price)}</p>
+        )}
       </div>
     </div>
-    <div className={`px-3 py-1 text-sm font-medium rounded-full ${isPositive ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-      {isPositive ? '+' : ''}{change}%
-    </div>
+    {loading ? (
+      <div className="h-6 w-16 bg-slate-700 animate-pulse rounded-full"></div>
+    ) : (
+      <div className={`px-3 py-1 text-sm font-medium rounded-full ${isPositive ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+        {formatPercentage(change)}
+      </div>
+    )}
   </div>
 );
 
@@ -64,18 +74,23 @@ const EmptyState = ({ title, message, buttonText }) => (
 
 const Dashboard = ({
   chartData = [],
-  bitcoinPrice = 45000.00, // Example data
-  ethereumPrice = 3200.00, // Example data
 }) => {
   const [dashboardData, setDashboardData] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [cryptoPrices, setCryptoPrices] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cryptoLoading, setCryptoLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const data = await transactionService.getDashboardStats();
-        setDashboardData(data);
+        const [dashData, profile] = await Promise.all([
+          transactionService.getDashboardStats(),
+          profileService.getProfile()
+        ]);
+        setDashboardData(dashData);
+        setUserProfile(profile);
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
         setError(err.response?.data?.message || 'Failed to load dashboard');
@@ -85,6 +100,32 @@ const Dashboard = ({
     };
 
     fetchDashboardData();
+  }, []);
+
+  useEffect(() => {
+    const fetchCryptoPrices = async () => {
+      try {
+        const prices = await getCryptoPrices([
+          'bitcoin', 
+          'ethereum', 
+          'tether', 
+          'binancecoin', 
+          'solana', 
+          'ripple'
+        ]);
+        setCryptoPrices(prices);
+      } catch (err) {
+        console.error('Failed to load crypto prices:', err);
+      } finally {
+        setCryptoLoading(false);
+      }
+    };
+
+    fetchCryptoPrices();
+    
+    // Refresh prices every 30 seconds
+    const interval = setInterval(fetchCryptoPrices, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const transactions = dashboardData?.transactions || [];
@@ -112,6 +153,33 @@ const Dashboard = ({
       
 
       <main className="flex-1 p-4 md:p-8 space-y-8 overflow-y-auto">
+        {/* User Profile Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            {userProfile?.profileImageUrl ? (
+              <img 
+                src={userProfile.profileImageUrl} 
+                alt={userProfile.name} 
+                className="w-12 h-12 rounded-full object-cover border-2 border-blue-500"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center border-2 border-slate-600">
+                <FaUser className="text-slate-400 text-xl" />
+              </div>
+            )}
+            <div>
+              <h2 className="text-xl font-bold text-white">Welcome back, {userProfile?.name || 'User'}!</h2>
+              <p className="text-sm text-slate-400">{userProfile?.email}</p>
+            </div>
+          </div>
+          <Link 
+            to="/markets" 
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition"
+          >
+            View Markets
+          </Link>
+        </div>
+
         {/* Header Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard icon={<FaStar />} title="Account Status" value={accountStatus} color="text-blue-400" />
@@ -201,10 +269,61 @@ const Dashboard = ({
             </div>
           
             {/* Side Column for Crypto Prices */}
-            <div className="lg:col-span-1 space-y-6">
-                <CryptoAssetRow icon={<FaBitcoin className="text-orange-500" />} name="Bitcoin" ticker="BTC" price={bitcoinPrice} change={0.56} isPositive={true} />
-                <CryptoAssetRow icon={<FaEthereum className="text-sky-400" />} name="Ethereum" ticker="ETH" price={ethereumPrice} change={-0.53} isPositive={false} />
-                {/* You can easily add more assets here */}
+            <div className="lg:col-span-1 space-y-4">
+                <CryptoAssetRow 
+                  icon={<FaBitcoin className="text-orange-500" />} 
+                  name="Bitcoin" 
+                  ticker="BTC" 
+                  price={cryptoPrices?.bitcoin?.usd || 0} 
+                  change={cryptoPrices?.bitcoin?.usd_24h_change || 0} 
+                  isPositive={cryptoPrices?.bitcoin?.usd_24h_change >= 0}
+                  loading={cryptoLoading}
+                />
+                <CryptoAssetRow 
+                  icon={<FaEthereum className="text-sky-400" />} 
+                  name="Ethereum" 
+                  ticker="ETH" 
+                  price={cryptoPrices?.ethereum?.usd || 0} 
+                  change={cryptoPrices?.ethereum?.usd_24h_change || 0} 
+                  isPositive={cryptoPrices?.ethereum?.usd_24h_change >= 0}
+                  loading={cryptoLoading}
+                />
+                <CryptoAssetRow 
+                  icon={<div className="text-green-500 font-bold text-2xl">₮</div>} 
+                  name="Tether" 
+                  ticker="USDT" 
+                  price={cryptoPrices?.tether?.usd || 0} 
+                  change={cryptoPrices?.tether?.usd_24h_change || 0} 
+                  isPositive={cryptoPrices?.tether?.usd_24h_change >= 0}
+                  loading={cryptoLoading}
+                />
+                <CryptoAssetRow 
+                  icon={<div className="text-yellow-500 font-bold text-2xl">⬡</div>} 
+                  name="BNB" 
+                  ticker="BNB" 
+                  price={cryptoPrices?.binancecoin?.usd || 0} 
+                  change={cryptoPrices?.binancecoin?.usd_24h_change || 0} 
+                  isPositive={cryptoPrices?.binancecoin?.usd_24h_change >= 0}
+                  loading={cryptoLoading}
+                />
+                <CryptoAssetRow 
+                  icon={<div className="text-purple-500 font-bold text-2xl">◎</div>} 
+                  name="Solana" 
+                  ticker="SOL" 
+                  price={cryptoPrices?.solana?.usd || 0} 
+                  change={cryptoPrices?.solana?.usd_24h_change || 0} 
+                  isPositive={cryptoPrices?.solana?.usd_24h_change >= 0}
+                  loading={cryptoLoading}
+                />
+                <CryptoAssetRow 
+                  icon={<div className="text-blue-400 font-bold text-2xl">✕</div>} 
+                  name="XRP" 
+                  ticker="XRP" 
+                  price={cryptoPrices?.ripple?.usd || 0} 
+                  change={cryptoPrices?.ripple?.usd_24h_change || 0} 
+                  isPositive={cryptoPrices?.ripple?.usd_24h_change >= 0}
+                  loading={cryptoLoading}
+                />
             </div>
         </div>
       </main>

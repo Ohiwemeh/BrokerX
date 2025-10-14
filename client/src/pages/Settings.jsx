@@ -7,9 +7,10 @@ import {
   FaLock, 
   FaMobileAlt, 
   FaUser,
-  // --- FIX: Added missing icons ---
   FaUpload,
-  FaFileImage
+  FaFileImage,
+  FaEye,
+  FaEyeSlash
 } from 'react-icons/fa';
 
 // --- Reusable Sub-Components ---
@@ -28,6 +29,31 @@ const FormInput = ({ id, label, type = 'text', value, onChange, placeholder, dis
       disabled={disabled}
       className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-800 disabled:text-slate-400 disabled:cursor-not-allowed"
     />
+  </div>
+);
+
+const PasswordInput = ({ id, label, value, onChange, placeholder, showPassword, onToggleVisibility }) => (
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-slate-400 mb-2">
+      {label}
+    </label>
+    <div className="relative">
+      <input
+        type={showPassword ? 'text' : 'password'}
+        id={id}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+      />
+      <button
+        type="button"
+        onClick={onToggleVisibility}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+      >
+        {showPassword ? <FaEyeSlash /> : <FaEye />}
+      </button>
+    </div>
   </div>
 );
 
@@ -270,6 +296,9 @@ const SecuritySettings = () => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -339,9 +368,30 @@ const SecuritySettings = () => {
                 <h2 className="text-xl font-bold text-white mb-1">Change Password</h2>
                 <p className="text-sm text-slate-400 mb-6">For your security, we recommend choosing a strong password that you don't use elsewhere.</p>
                 <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-lg">
-                    <FormInput id="currentPassword" label="Current Password" type="password" value={passwords.currentPassword} onChange={handlePasswordChange} />
-                    <FormInput id="newPassword" label="New Password" type="password" value={passwords.newPassword} onChange={handlePasswordChange} />
-                    <FormInput id="confirmPassword" label="Confirm New Password" type="password" value={passwords.confirmPassword} onChange={handlePasswordChange} />
+                    <PasswordInput 
+                        id="currentPassword" 
+                        label="Current Password" 
+                        value={passwords.currentPassword} 
+                        onChange={handlePasswordChange}
+                        showPassword={showCurrentPassword}
+                        onToggleVisibility={() => setShowCurrentPassword(!showCurrentPassword)}
+                    />
+                    <PasswordInput 
+                        id="newPassword" 
+                        label="New Password" 
+                        value={passwords.newPassword} 
+                        onChange={handlePasswordChange}
+                        showPassword={showNewPassword}
+                        onToggleVisibility={() => setShowNewPassword(!showNewPassword)}
+                    />
+                    <PasswordInput 
+                        id="confirmPassword" 
+                        label="Confirm New Password" 
+                        value={passwords.confirmPassword} 
+                        onChange={handlePasswordChange}
+                        showPassword={showConfirmPassword}
+                        onToggleVisibility={() => setShowConfirmPassword(!showConfirmPassword)}
+                    />
                     <div className="pt-2 flex justify-end">
                         <button 
                             type="submit" 

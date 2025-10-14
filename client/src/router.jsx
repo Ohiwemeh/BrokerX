@@ -45,6 +45,7 @@ export default function AppRouter() {
       withdrawal={150000}
           />
           <Route path="/markets" element={<Markets />} />
+          <Route path="/statistics" element={<Markets />} />
           <Route path="/markets/:symbol" element={<AssetDetail />} />
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/depositpage" element={<DepositPage />} />
