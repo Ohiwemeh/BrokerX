@@ -17,6 +17,11 @@ connection.once('open', () => {
   console.log("MongoDB database connection established successfully");
 });
 
+
+// Import and use the user routes
+const userRouter = require('./routes/user.routes');
+app.use('/api/users', userRouter); 
+
 // A simple test route to make sure everything is working
 app.get('/', (req, res) => {
   res.send('Hello from the BrokerX Backend!');

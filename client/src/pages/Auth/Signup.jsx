@@ -69,7 +69,7 @@ const Signup = () => {
               htmlFor="email"
               className="block text-sm font-semibold mb-1"
             >
-              phone Number
+              Phone Number
             </label>
             <input
               type="number"
@@ -77,6 +77,35 @@ const Signup = () => {
               placeholder="Your email address"
               className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+          <div className="mb-4">
+            <label
+              htmlFor="country"
+              className="block text-sm font-semibold mb-1"
+            >
+              Country
+            </label> 
+            <select name="country" id="country" className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Select Country</option>
+              <option value="">United States</option>
+              <option value="">Canada</option>
+              <option value="">United Kingdom</option>
+              <option value="">Australia</option>
+              <option value="">Germany</option>
+              <option value="">France</option>
+              <option value="">India</option>
+              <option value="">Japan</option>
+              <option value="">China</option>
+              <option value="">Brazil</option>
+              <option value="">South Africa</option>
+              <option value="">Mexico</option>
+              <option value="">Italy</option>
+              <option value="">Spain</option>
+              <option value="">Russia</option>
+              <option value="">Netherlands</option>
+              <option value="">Switzerland</option>
+            </select>
+
           </div>
           <div className="mb-4">
             <label
