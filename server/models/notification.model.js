@@ -17,9 +17,11 @@ const notificationSchema = new mongoose.Schema({
       'DEPOSIT_REQUEST',
       'DEPOSIT_APPROVED',
       'DEPOSIT_REJECTED',
+      'WITHDRAWAL_REQUEST',
+      'WITHDRAWAL_APPROVED',
+      'TRANSACTION_REJECTED',
       'SETTINGS_CHANGED',
       'PROFILE_UPDATED',
-      'WITHDRAWAL_REQUEST',
       'ADMIN_MESSAGE'
     ],
     required: true

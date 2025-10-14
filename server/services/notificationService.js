@@ -161,6 +161,32 @@ class NotificationService {
     );
   }
 
+  // Withdrawal approved - notify user
+  static async notifyWithdrawalApproved(user, amount, transactionId) {
+    return this.createNotification(
+      user._id,
+      'WITHDRAWAL_APPROVED',
+      'Withdrawal Approved ✅',
+      `Your withdrawal of $${amount.toLocaleString()} has been approved and is being processed.`,
+      { amount, transactionId },
+      '/transactions',
+      'high'
+    );
+  }
+
+  // Transaction rejected - notify user
+  static async notifyTransactionRejected(user, type, amount, transactionId) {
+    return this.createNotification(
+      user._id,
+      'TRANSACTION_REJECTED',
+      `${type} Rejected ❌`,
+      `Your ${type.toLowerCase()} request of $${amount.toLocaleString()} has been rejected. Please contact support for more information.`,
+      { type, amount, transactionId },
+      '/transactions',
+      'high'
+    );
+  }
+
   // Admin message - notify user
   static async notifyAdminMessage(user, title, message) {
     return this.createNotification(

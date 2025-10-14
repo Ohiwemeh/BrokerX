@@ -4,6 +4,7 @@ const router = require('express').Router();
 const Transaction = require('../models/transaction.model');
 const User = require('../models/user.model');
 const { verifyToken } = require('../middleware/auth.middleware');
+const NotificationService = require('../services/notificationService');
 
 // @route   GET /api/transactions
 // @desc    Get user transactions with filters
@@ -102,6 +103,24 @@ router.post('/deposit', verifyToken, async (req, res) => {
 
     await transaction.save();
 
+    // Notify admins of new deposit request
+    const user = await User.findById(req.user._id);
+    await NotificationService.notifyDepositRequest(user, amount, transactionId);
+
+    // Emit real-time notification to admins
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin-room').emit('new-deposit-request', {
+        transactionId,
+        userId: user._id,
+        userName: user.name,
+        amount,
+        method,
+        timestamp: new Date(),
+        message: `${user.name} requested a deposit of $${amount.toLocaleString()}`
+      });
+    }
+
     res.status(201).json({
       message: 'Deposit request created successfully',
       transaction
@@ -146,6 +165,23 @@ router.post('/withdrawal', verifyToken, async (req, res) => {
     });
 
     await transaction.save();
+
+    // Notify admins of new withdrawal request
+    await NotificationService.notifyWithdrawalRequest(user, amount, transactionId);
+
+    // Emit real-time notification to admins
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin-room').emit('new-withdrawal-request', {
+        transactionId,
+        userId: user._id,
+        userName: user.name,
+        amount,
+        method: method || 'Bank Transfer',
+        timestamp: new Date(),
+        message: `${user.name} requested a withdrawal of $${amount.toLocaleString()}`
+      });
+    }
 
     res.status(201).json({
       message: 'Withdrawal request created successfully',

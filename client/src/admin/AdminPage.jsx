@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router';
 import { adminService, emailService } from '../api/services';
 import NotificationBell from '../components/NotificationBell';
 import { 
@@ -16,7 +17,8 @@ import {
   FaEyeSlash,
   FaCertificate,
   FaExclamationCircle,
-  FaTimesCircle
+  FaTimesCircle,
+  FaExchangeAlt
 } from 'react-icons/fa';
 
 // --- Reusable Sub-Components ---
@@ -270,6 +272,14 @@ const AdminPage = () => {
             </div>
             <NotificationBell />
           </div>
+          {/* Transactions Button */}
+          <Link
+            to="/admin/transactions"
+            className="mt-3 flex items-center justify-center gap-2 w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+          >
+            <FaExchangeAlt />
+            <span>View Transactions</span>
+          </Link>
         </div>
         <div className="p-3 sm:p-4">
           <div className="relative">
