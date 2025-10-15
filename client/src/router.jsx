@@ -12,6 +12,8 @@ import Landing from "./pages/Landing";
 import WalletPage from "./pages/WalletPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import AdminPage from "./admin/AdminPage";
+import AdminTransactions from "./admin/AdminTransactions";
+import { AdminRoute } from "./components/ProtectedRoute";
 
 
 const chartData = [
@@ -30,8 +32,19 @@ export default function AppRouter() {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/admin" element={<AdminPage />} />
         <Route path="/" element={<Landing />} />
+        
+        {/* Admin Only Routes */}
+        <Route path="/admin" element={
+          <AdminRoute>
+            <AdminPage />
+          </AdminRoute>
+        } />
+        <Route path="/admin/transactions" element={
+          <AdminRoute>
+            <AdminTransactions />
+          </AdminRoute>
+        } />
 
         {/* Protected (Main App) Routes */}
         <Route element={<MainLayout />}>

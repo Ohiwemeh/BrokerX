@@ -183,6 +183,16 @@ export const adminService = {
     const response = await api.get('/admin/stats');
     return response.data;
   },
+
+  getTransactions: async (filters = {}) => {
+    const response = await api.get('/admin/transactions', { params: filters });
+    return response.data;
+  },
+
+  updateTransactionStatus: async (id, status) => {
+    const response = await api.put(`/admin/transactions/${id}/update-status`, { status });
+    return response.data;
+  },
 };
 
 // Email Services

@@ -181,9 +181,11 @@ const NotificationBell = () => {
       DEPOSIT_REQUEST: { icon: '💰', color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
       DEPOSIT_APPROVED: { icon: '✅', color: 'text-green-400', bg: 'bg-green-500/10' },
       DEPOSIT_REJECTED: { icon: '❌', color: 'text-red-400', bg: 'bg-red-500/10' },
+      WITHDRAWAL_REQUEST: { icon: '💸', color: 'text-purple-400', bg: 'bg-purple-500/10' },
+      WITHDRAWAL_APPROVED: { icon: '✅', color: 'text-green-400', bg: 'bg-green-500/10' },
+      TRANSACTION_REJECTED: { icon: '❌', color: 'text-red-400', bg: 'bg-red-500/10' },
       SETTINGS_CHANGED: { icon: '⚙️', color: 'text-gray-400', bg: 'bg-gray-500/10' },
       PROFILE_UPDATED: { icon: '📝', color: 'text-blue-400', bg: 'bg-blue-500/10' },
-      WITHDRAWAL_REQUEST: { icon: '💸', color: 'text-purple-400', bg: 'bg-purple-500/10' },
       ADMIN_MESSAGE: { icon: '📢', color: 'text-orange-400', bg: 'bg-orange-500/10' },
     };
     return styles[type] || { icon: '🔔', color: 'text-gray-400', bg: 'bg-gray-500/10' };
