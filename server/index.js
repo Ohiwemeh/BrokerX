@@ -19,7 +19,11 @@ const io = new Server(server, {
   }
 });
 
-app.use(cors()); // Enable CORS for all routes
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+})); // Enable CORS for all routes
 app.use(express.json()); // Allow the server to accept JSON data
 
 // Make io accessible to routes
