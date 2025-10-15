@@ -4,6 +4,7 @@ import Dashboard from "../Dashboard";
 import { useNavigate } from "react-router";
 import { Link } from "react-router";
 import { authService } from "../../api/services";
+import { countriesWithCurrency } from "../../data/countries";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const Signup = () => {
     email: "",
     phoneNumber: "",
     country: "",
+    currency: "",
     password: "",
     confirmPassword: "",
   });
@@ -25,7 +27,15 @@ const Signup = () => {
   };
 
   const handleCountryChange = (e) => {
-    setFormData({ ...formData, country: e.target.value });
+    const selectedCountry = e.target.value;
+    const countryData = countriesWithCurrency.find(c => c.name === selectedCountry);
+    const currency = countryData ? countryData.currency : "USD";
+    
+    setFormData({ 
+      ...formData, 
+      country: selectedCountry,
+      currency: currency
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -159,23 +169,11 @@ const Signup = () => {
                 required
               >
                 <option value="">Select Country</option>
-                <option value="United States">United States</option>
-                <option value="Canada">Canada</option>
-                <option value="United Kingdom">United Kingdom</option>
-                <option value="Australia">Australia</option>
-                <option value="Germany">Germany</option>
-                <option value="France">France</option>
-                <option value="India">India</option>
-                <option value="Japan">Japan</option>
-                <option value="China">China</option>
-                <option value="Brazil">Brazil</option>
-                <option value="South Africa">South Africa</option>
-                <option value="Mexico">Mexico</option>
-                <option value="Italy">Italy</option>
-                <option value="Spain">Spain</option>
-                <option value="Russia">Russia</option>
-                <option value="Netherlands">Netherlands</option>
-                <option value="Switzerland">Switzerland</option>
+                {countriesWithCurrency.map((country) => (
+                  <option key={country.name} value={country.name}>
+                    {country.name} ({country.currency})
+                  </option>
+                ))}
               </select>
             </div>
             <div className="mb-4">

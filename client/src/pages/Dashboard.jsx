@@ -19,6 +19,7 @@ import {
 import {Link} from 'react-router';
 import { transactionService, profileService } from '../api/services';
 import { getCryptoPrices, formatPrice, formatPercentage } from '../api/cryptoService';
+import { formatCurrency } from '../utils/currency';
 
 // --- Reusable Sub-Components ---
 
@@ -217,6 +218,7 @@ const Dashboard = ({
   const deposit = dashboardData?.totalDeposit || 0;
   const withdrawal = dashboardData?.totalWithdrawal || 0;
   const accountStatus = dashboardData?.accountStatus || 'Active';
+  const userCurrency = userProfile?.currency || 'USD';
   
   const hasTransactions = transactions.length > 0;
   const hasChartData = chartData.length > 0;
@@ -272,9 +274,9 @@ const Dashboard = ({
         {/* Header Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           <AccountStatusCard status={accountStatus} />
-          <StatCard icon={<FaArrowCircleUp />} title="Deposit" value={`$${deposit.toLocaleString()}`} />
-          <StatCard icon={<FaChartLine />} title="Profit" value={`$${profit.toLocaleString()}`} color="text-green-400" />
-          <StatCard icon={<FaArrowCircleDown />} title="Total Withdrawal" value={`$${withdrawal.toLocaleString()}`} color="text-red-400" />
+          <StatCard icon={<FaArrowCircleUp />} title="Deposit" value={formatCurrency(deposit, userCurrency)} />
+          <StatCard icon={<FaChartLine />} title="Profit" value={formatCurrency(profit, userCurrency)} color="text-green-400" />
+          <StatCard icon={<FaArrowCircleDown />} title="Total Withdrawal" value={formatCurrency(withdrawal, userCurrency)} color="text-red-400" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
