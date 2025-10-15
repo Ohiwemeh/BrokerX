@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://gcasl-server.onrender.com/api';
+const API_BASE_URL = 'https://gcasl-server.onrender.com';
 
 // Create axios instance
 const api = axios.create({
