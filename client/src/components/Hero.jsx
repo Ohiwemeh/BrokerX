@@ -2,7 +2,7 @@ import MotionFade from "./MotionFade";
 
 export default function Hero() {
   return (
-    <section id="hero" className="pt-20">
+    <section id="hero" className="pt-2">
       <div className="relative bg-gradient-to-b from-sky-900 via-slate-900 to-slate-800 text-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-32 flex flex-col lg:flex-row items-center gap-12">
           <div className="w-full lg:w-1/2">
