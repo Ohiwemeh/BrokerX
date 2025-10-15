@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://brokerx.onrender.com';
+const API_BASE_URL = 'https://brokerx.onrender.com/api'; // Replace with your server URL
 
 // Create axios instance
 const api = axios.create({
