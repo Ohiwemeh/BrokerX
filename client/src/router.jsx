@@ -1,19 +1,26 @@
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from "react-router";
+import LoadingSpinner from "./components/LoadingSpinner";
+
+// Eager load critical routes
 import MainLayout from "./layout/MainLayout";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
-import Dashboard from "./pages/Dashboard";
-import Markets from "./pages/Markets";
-import AssetDetail from "./pages/AssetDetail";
-import Portfolio from "./pages/Portfolio";
-import DepositPage from "./pages/Orders";
-import SettingsPage from "./pages/Settings";
 import Landing from "./pages/Landing";
-import WalletPage from "./pages/WalletPage";
-import TransactionsPage from "./pages/TransactionsPage";
-import AdminPage from "./admin/AdminPage";
-import AdminTransactions from "./admin/AdminTransactions";
 import { AdminRoute } from "./components/ProtectedRoute";
+
+// Lazy load other routes
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Markets = lazy(() => import("./pages/Markets"));
+const AssetDetail = lazy(() => import("./pages/AssetDetail"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const DepositPage = lazy(() => import("./pages/Orders"));
+const SettingsPage = lazy(() => import("./pages/Settings"));
+const WalletPage = lazy(() => import("./pages/WalletPage"));
+const TransactionsPage = lazy(() => import("./pages/TransactionsPage"));
+const TradingPlatform = lazy(() => import("./pages/TradingPlatform"));
+const AdminPage = lazy(() => import("./admin/AdminPage"));
+const AdminTransactions = lazy(() => import("./admin/AdminTransactions"));
 
 
 const chartData = [
@@ -28,46 +35,51 @@ const chartData = [
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/" element={<Landing />} />
-        
-        {/* Admin Only Routes */}
-        <Route path="/admin" element={
-          <AdminRoute>
-            <AdminPage />
-          </AdminRoute>
-        } />
-        <Route path="/admin/transactions" element={
-          <AdminRoute>
-            <AdminTransactions />
-          </AdminRoute>
-        } />
+      <Suspense fallback={<LoadingSpinner fullScreen size="lg" />}>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/" element={<Landing />} />
+          
+          {/* Admin Only Routes */}
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/transactions" element={
+            <AdminRoute>
+              <AdminTransactions />
+            </AdminRoute>
+          } />
 
-        {/* Protected (Main App) Routes */}
-        <Route element={<MainLayout />}>
-          
-          <Route path="/dashboard" element={<Dashboard />} 
-           chartData={chartData}
-      bitcoinPrice={25948.18}
-      ethereumPrice={1743.41}
-      profit={150000}
-      deposit={5000}
-      withdrawal={150000}
-          />
-          <Route path="/markets" element={<Markets />} />
-          <Route path="/statistics" element={<Markets />} />
-          <Route path="/markets/:symbol" element={<AssetDetail />} />
-          <Route path="/portfolio" element={<Portfolio />} />
-          <Route path="/depositpage" element={<DepositPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/wallet" element={<WalletPage />} />
-          <Route path="/transactions" element={<TransactionsPage />} />
-          
-        </Route>
-      </Routes>
+          {/* Protected (Main App) Routes */}
+          <Route element={<MainLayout />}>
+            
+            <Route path="/dashboard" element={<Dashboard />} 
+             chartData={chartData}
+        bitcoinPrice={25948.18}
+        ethereumPrice={1743.41}
+        profit={150000}
+        deposit={5000}
+        withdrawal={150000}
+            />
+            <Route path="/markets" element={<Markets />} />
+            <Route path="/statistics" element={<Markets />} />
+            <Route path="/markets/:symbol" element={<AssetDetail />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/depositpage" element={<DepositPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/transactions" element={<TransactionsPage />} />
+            
+          </Route>
+
+          {/* Trading Platform - Full Screen */}
+          <Route path="/trade/:symbol" element={<TradingPlatform />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

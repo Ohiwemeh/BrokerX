@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { 
   FaBitcoin, 
@@ -18,6 +18,7 @@ import {
 } from 'react-icons/fa';
 import {Link} from 'react-router';
 import { transactionService, profileService } from '../api/services';
+import { CryptoRowSkeleton, StatCardSkeleton, ChartSkeleton } from '../components/SkeletonLoader';
 import { getCryptoPrices, formatPrice, formatPercentage } from '../api/cryptoService';
 import { formatCurrency } from '../utils/currency';
 
@@ -117,9 +118,12 @@ const AccountStatusCard = ({ status }) => {
   );
 };
 
-// Crypto Asset Row Component
-const CryptoAssetRow = ({ icon, name, ticker, price, change, isPositive, loading }) => (
-  <div className="bg-slate-800 p-3 sm:p-4 rounded-xl flex justify-between items-center border border-slate-700 hover:bg-slate-700/50 transition-colors cursor-pointer">
+// Crypto Asset Row Component (Memoized for performance)
+const CryptoAssetRow = memo(({ icon, name, ticker, price, change, isPositive, loading, cryptoId }) => (
+  <Link 
+    to={`/trade/${cryptoId}`}
+    className="bg-slate-800 p-3 sm:p-4 rounded-xl flex justify-between items-center border border-slate-700 hover:bg-slate-700/50 hover:border-blue-500 transition-all cursor-pointer block"
+  >
     <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0">
       <div className="text-2xl sm:text-3xl md:text-4xl flex-shrink-0">{icon}</div>
       <div className="min-w-0">
@@ -137,11 +141,11 @@ const CryptoAssetRow = ({ icon, name, ticker, price, change, isPositive, loading
       <div className="h-6 sm:h-8 w-12 sm:w-16 bg-slate-700 animate-pulse rounded flex-shrink-0"></div>
     ) : (
       <div className={`text-right flex-shrink-0 ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-        <p className="font-semibold text-xs sm:text-sm md:text-base">{formatPercentage(change)}</p>
+        <p className="font-semibold text-xs sm:text-base">{formatPercentage(change)}</p>
       </div>
     )}
-  </div>
-);
+  </Link>
+));
 
 // Empty State Component
 const EmptyState = ({ title, message, buttonText }) => (
@@ -168,12 +172,19 @@ const Dashboard = ({
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Set a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      setCryptoLoading(false);
+    }, 10000); // 10 seconds max
+
     const fetchDashboardData = async () => {
       try {
         const [dashData, profile] = await Promise.all([
           transactionService.getDashboardStats(),
           profileService.getProfile()
         ]);
+        
         setDashboardData(dashData);
         setUserProfile(profile);
       } catch (err) {
@@ -181,10 +192,13 @@ const Dashboard = ({
         setError(err.response?.data?.message || 'Failed to load dashboard');
       } finally {
         setLoading(false);
+        clearTimeout(timeout);
       }
     };
 
     fetchDashboardData();
+    
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
@@ -198,6 +212,7 @@ const Dashboard = ({
           'solana', 
           'ripple'
         ]);
+        
         setCryptoPrices(prices);
       } catch (err) {
         console.error('Failed to load crypto prices:', err);
@@ -208,8 +223,8 @@ const Dashboard = ({
 
     fetchCryptoPrices();
     
-    // Refresh prices every 30 seconds
-    const interval = setInterval(fetchCryptoPrices, 30000);
+    // Refresh prices every 60 seconds (reduced frequency)
+    const interval = setInterval(fetchCryptoPrices, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -223,13 +238,62 @@ const Dashboard = ({
   const hasTransactions = transactions.length > 0;
   const hasChartData = chartData.length > 0;
 
-  if (loading) {
+  // Show error if loading failed
+  if (error && !dashboardData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p>Loading dashboard...</p>
+        <div className="text-center max-w-md p-8">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold mb-4">Connection Error</h2>
+          <p className="text-slate-400 mb-6">{error}</p>
+          <div className="bg-slate-800 p-4 rounded-lg text-left text-sm mb-6">
+            <p className="font-semibold mb-2">Possible solutions:</p>
+            <ul className="list-disc list-inside space-y-1 text-slate-300">
+              <li>Make sure the backend server is running on port 5000</li>
+              <li>Check your internet connection</li>
+              <li>Verify the API URL in .env file</li>
+            </ul>
+          </div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold"
+          >
+            Retry
+          </button>
         </div>
+      </div>
+    );
+  }
+
+  // Show skeleton on initial load only
+  if (loading && !userProfile && !dashboardData) {
+    return (
+      <div className="min-h-screen flex bg-slate-900 text-white">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 md:space-y-8">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-slate-400">Loading dashboard...</p>
+              <p className="text-xs text-slate-500 mt-2">This should only take a few seconds</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+            <div className="lg:col-span-2">
+              <ChartSkeleton />
+            </div>
+            <div className="lg:col-span-1 space-y-3">
+              <CryptoRowSkeleton />
+              <CryptoRowSkeleton />
+              <CryptoRowSkeleton />
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -369,6 +433,7 @@ const Dashboard = ({
                   change={cryptoPrices?.bitcoin?.usd_24h_change || 0} 
                   isPositive={cryptoPrices?.bitcoin?.usd_24h_change >= 0}
                   loading={cryptoLoading}
+                  cryptoId="bitcoin"
                 />
                 <CryptoAssetRow 
                   icon={<FaEthereum className="text-sky-400" />} 
@@ -378,6 +443,7 @@ const Dashboard = ({
                   change={cryptoPrices?.ethereum?.usd_24h_change || 0} 
                   isPositive={cryptoPrices?.ethereum?.usd_24h_change >= 0}
                   loading={cryptoLoading}
+                  cryptoId="ethereum"
                 />
                 <CryptoAssetRow 
                   icon={<div className="text-green-500 font-bold text-2xl">₮</div>} 
@@ -387,6 +453,7 @@ const Dashboard = ({
                   change={cryptoPrices?.tether?.usd_24h_change || 0} 
                   isPositive={cryptoPrices?.tether?.usd_24h_change >= 0}
                   loading={cryptoLoading}
+                  cryptoId="tether"
                 />
                 <CryptoAssetRow 
                   icon={<div className="text-yellow-500 font-bold text-2xl">⬡</div>} 
@@ -396,6 +463,7 @@ const Dashboard = ({
                   change={cryptoPrices?.binancecoin?.usd_24h_change || 0} 
                   isPositive={cryptoPrices?.binancecoin?.usd_24h_change >= 0}
                   loading={cryptoLoading}
+                  cryptoId="binancecoin"
                 />
                 <CryptoAssetRow 
                   icon={<div className="text-purple-500 font-bold text-2xl">◎</div>} 
@@ -405,6 +473,7 @@ const Dashboard = ({
                   change={cryptoPrices?.solana?.usd_24h_change || 0} 
                   isPositive={cryptoPrices?.solana?.usd_24h_change >= 0}
                   loading={cryptoLoading}
+                  cryptoId="solana"
                 />
                 <CryptoAssetRow 
                   icon={<div className="text-blue-400 font-bold text-2xl">✕</div>} 
@@ -414,6 +483,7 @@ const Dashboard = ({
                   change={cryptoPrices?.ripple?.usd_24h_change || 0} 
                   isPositive={cryptoPrices?.ripple?.usd_24h_change >= 0}
                   loading={cryptoLoading}
+                  cryptoId="ripple"
                 />
             </div>
         </div>
