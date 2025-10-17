@@ -23,7 +23,16 @@ const Login = () => {
       await authService.login(formData.email, formData.password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Please try again.");
+      // Better error messages
+      if (err.code === 'ECONNABORTED') {
+        setError("Request timeout. Please try again or check your connection.");
+      } else if (err.code === 'ERR_NETWORK') {
+        setError("Network error. Please ensure the server is running.");
+      } else if (err.response?.status === 401 || err.response?.status === 400) {
+        setError("Invalid email or password.");
+      } else {
+        setError(err.response?.data?.message || "Login failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

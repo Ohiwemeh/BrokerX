@@ -70,8 +70,27 @@ const mongoOptions = {
 };
 
 mongoose.connect(uri, mongoOptions)
-  .then(() => {
+  .then(async () => {
     console.log("✅ MongoDB database connection established successfully");
+    
+    // Ensure indexes are created and check them
+    try {
+      const User = require('./models/user.model');
+      await User.createIndexes();
+      
+      // List all indexes to verify
+      const indexes = await User.collection.getIndexes();
+      console.log("✅ Database indexes:", Object.keys(indexes));
+      
+      // Check if email index exists
+      if (indexes.email_1) {
+        console.log("✅ Email index is active");
+      } else {
+        console.warn("⚠️ Email index NOT FOUND!");
+      }
+    } catch (indexError) {
+      console.warn("⚠️ Index error:", indexError.message);
+    }
   })
   .catch((err) => {
     console.error('❌ MongoDB connection error:', err.message);

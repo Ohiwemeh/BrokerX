@@ -12,7 +12,6 @@ const NotificationBell = () => {
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'unread', 'read'
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
-  const audioRef = useRef(null);
   
   // Socket and sound
   const { socket, connected } = useSocket();
@@ -36,13 +35,8 @@ const NotificationBell = () => {
   const fetchUnreadCount = async () => {
     try {
       const count = await notificationService.getUnreadCount();
-      const previousCount = unreadCount;
       setUnreadCount(count);
-      
-      // Play sound if new notification
-      if (count > previousCount && audioRef.current) {
-        audioRef.current.play().catch(err => console.log('Audio play failed:', err));
-      }
+      // Sound disabled to prevent errors
     } catch (error) {
       console.error('Failed to fetch unread count:', error);
     }
@@ -61,13 +55,8 @@ const NotificationBell = () => {
     socket.on('new-user-signup', (data) => {
       console.log('🔔 New user signup notification received:', data);
       
-      // Play notification sound
-      try {
-        playSound();
-        console.log('✅ Sound played');
-      } catch (error) {
-        console.error('❌ Sound error:', error);
-      }
+      // Sound disabled to prevent errors
+      // playSound();
       
       // Refresh notifications and count
       console.log('🔄 Refreshing notifications...');
@@ -204,9 +193,6 @@ const NotificationBell = () => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Notification Sound */}
-      <audio ref={audioRef} src="/notification.mp3" preload="auto" />
-
       {/* Bell Icon */}
       <button
         onClick={() => setIsOpen(!isOpen)}

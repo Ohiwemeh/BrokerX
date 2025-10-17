@@ -21,6 +21,7 @@ import {
 } from 'react-icons/fa';
 import { getCryptoPrices, formatPrice, formatPercentage } from '../api/cryptoService';
 import { formatCurrency } from '../utils/currency';
+import { useStorageCleanup } from '../hooks/useStorageCleanup';
 
 // Crypto icon mapping
 const cryptoIcons = {
@@ -42,7 +43,7 @@ const TradingPlatform = () => {
   const [cryptoData, setCryptoData] = useState(null);
   const [selectedCrypto, setSelectedCrypto] = useState(symbol || 'bitcoin');
   const [timeframe, setTimeframe] = useState('1D');
-  const [chartType, setChartType] = useState('candlestick');
+  const [chartType, setChartType] = useState('area'); // Changed to 'area' as default to avoid candlestick API issues
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,9 @@ const TradingPlatform = () => {
   const [orderAmount, setOrderAmount] = useState('');
   const [orderPrice, setOrderPrice] = useState('');
   const [showOrderModal, setShowOrderModal] = useState(false);
+
+  // Enable storage cleanup
+  useStorageCleanup();
   
   // Market data for the watchlist
   const [marketData, setMarketData] = useState([]);
@@ -175,19 +179,48 @@ const TradingPlatform = () => {
         },
       });
 
+      // Verify chart methods are available
+      console.log('Chart methods:', {
+        hasAddCandlestickSeries: typeof chart.addCandlestickSeries === 'function',
+        hasAddLineSeries: typeof chart.addLineSeries === 'function',
+        hasAddAreaSeries: typeof chart.addAreaSeries === 'function',
+        chartType: chartType
+      });
+
       let series;
       const candleData = generateCandlestickData(cryptoData.usd);
       const areaColor = cryptoIcons[selectedCrypto]?.color || '#3b82f6';
 
       // Create appropriate series based on chart type
-      if (chartType === 'line') {
+      if (chartType === 'candlestick') {
+        if (typeof chart.addCandlestickSeries !== 'function') {
+          console.error('addCandlestickSeries is not available, falling back to area chart');
+          series = chart.addAreaSeries({
+            topColor: areaColor + '80',
+            bottomColor: areaColor + '10',
+            lineColor: areaColor,
+            lineWidth: 2,
+          });
+          series.setData(candleData.map(d => ({ time: d.time, value: d.close })));
+        } else {
+          series = chart.addCandlestickSeries({
+            upColor: '#22c55e',
+            downColor: '#ef4444',
+            borderUpColor: '#22c55e',
+            borderDownColor: '#ef4444',
+            wickUpColor: '#22c55e',
+            wickDownColor: '#ef4444',
+          });
+          series.setData(candleData);
+        }
+      } else if (chartType === 'line') {
         series = chart.addLineSeries({
           color: areaColor,
           lineWidth: 2,
         });
         series.setData(candleData.map(d => ({ time: d.time, value: d.close })));
       } else {
-        // Default to area chart (works for both 'area' and 'candlestick')
+        // Default to area chart
         series = chart.addAreaSeries({
           topColor: areaColor + '80',
           bottomColor: areaColor + '10',
@@ -222,6 +255,9 @@ const TradingPlatform = () => {
       };
     } catch (error) {
       console.error('Error creating chart:', error);
+      console.error('Chart type:', chartType);
+      console.error('Crypto data:', cryptoData);
+      setLoading(false);
     }
   }, [cryptoData, chartType, selectedCrypto]);
 

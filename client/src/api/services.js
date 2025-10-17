@@ -1,12 +1,15 @@
 import api from './config';
+import { setItem, getItem, removeItem } from '../utils/storage';
 
 // Auth Services
 export const authService = {
   signup: async (userData) => {
     const response = await api.post('/users/signup', userData);
     if (response.data.token) {
+      // Store token directly in localStorage (not cached, always needed)
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      // Store user with safe storage utility
+      setItem('user', response.data.user);
     }
     return response.data;
   },
@@ -14,15 +17,23 @@ export const authService = {
   login: async (email, password) => {
     const response = await api.post('/users/login', { email, password });
     if (response.data.token) {
+      // Store token directly in localStorage (not cached, always needed)
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      
+      // Store user - use direct localStorage if storage utility fails
+      try {
+        setItem('user', response.data.user);
+      } catch (storageError) {
+        console.warn('Storage utility failed, using direct localStorage:', storageError);
+        localStorage.setItem('brokerx_user', JSON.stringify(response.data.user));
+      }
     }
     return response.data;
   },
 
   logout: () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    removeItem('user');
   },
 
   isAuthenticated: () => {
@@ -30,15 +41,41 @@ export const authService = {
   },
 
   getCurrentUser: () => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+    try {
+      const user = getItem('user');
+      if (user) return user;
+      
+      // Fallback to direct localStorage
+      const directUser = localStorage.getItem('brokerx_user');
+      return directUser ? JSON.parse(directUser) : null;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      return null;
+    }
   },
 };
 
 // Profile Services
 export const profileService = {
-  getProfile: async () => {
+  getProfile: async (useCache = true) => {
+    // Check cache first
+    if (useCache) {
+      const cached = getItem('profile', { cache: true });
+      if (cached) {
+        return cached;
+      }
+    }
+
     const response = await api.get('/profile');
+    
+    // Cache the profile data for 5 minutes
+    if (response.data) {
+      setItem('profile', response.data, { 
+        cache: true, 
+        expiryMs: 5 * 60 * 1000 // 5 minutes
+      });
+    }
+    
     return response.data;
   },
 
@@ -110,7 +147,10 @@ export const transactionService = {
     return response.data;
   },
 
-  getDashboardStats: async () => {
+  getDashboardStats: async (useCache = false) => {
+    // Caching disabled for dashboard stats (too large)
+    // Backend sends full transaction history which is 8MB+
+    
     const response = await api.get('/transactions/dashboard/stats');
     return response.data;
   },
