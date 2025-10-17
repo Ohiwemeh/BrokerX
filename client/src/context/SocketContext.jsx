@@ -31,7 +31,6 @@ export const SocketProvider = ({ children }) => {
         });
 
         socketInstance.on('connect', () => {
-          console.log('✅ Socket connected:', socketInstance.id);
           setConnected(true);
 
           // If user is admin, join admin room
@@ -39,17 +38,14 @@ export const SocketProvider = ({ children }) => {
           
           if (user && user.role === 'admin') {
             socketInstance.emit('join-admin', user.id);
-            console.log('✅ Admin joined admin room');
           }
         });
 
         socketInstance.on('disconnect', () => {
-          console.log('⚠️ Socket disconnected');
           setConnected(false);
         });
 
-        socketInstance.on('connect_error', (error) => {
-          console.warn('⚠️ Socket connection failed (backend may be offline)');
+        socketInstance.on('connect_error', () => {
           setConnected(false);
         });
 
@@ -60,7 +56,7 @@ export const SocketProvider = ({ children }) => {
           socketInstance.disconnect();
         };
       } catch (error) {
-        console.warn('⚠️ Socket initialization failed:', error.message);
+        // Socket initialization failed silently
       }
     };
 

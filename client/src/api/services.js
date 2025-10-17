@@ -24,7 +24,6 @@ export const authService = {
       try {
         setItem('user', response.data.user);
       } catch (storageError) {
-        console.warn('Storage utility failed, using direct localStorage:', storageError);
         localStorage.setItem('brokerx_user', JSON.stringify(response.data.user));
       }
     }
@@ -49,7 +48,6 @@ export const authService = {
       const directUser = localStorage.getItem('brokerx_user');
       return directUser ? JSON.parse(directUser) : null;
     } catch (error) {
-      console.error('Error getting user:', error);
       return null;
     }
   },

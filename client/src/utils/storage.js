@@ -113,14 +113,12 @@ export const setItem = (key, value, options = {}) => {
 
   // Check if single item is too large (more restrictive)
   if (dataSize > MAX_ITEM_SIZE) {
-    console.warn(`Item too large to cache (${(dataSize / 1024).toFixed(2)}KB). Max: 500KB. Skipping cache.`);
     return false; // Don't cache, but don't throw error
   }
 
   // Check if would exceed total storage
   const totalSize = getTotalStorageSize();
   if (totalSize + dataSize > MAX_STORAGE_SIZE) {
-    console.warn('Storage approaching limit. Clearing old cache...');
     clearExpiredCache();
   }
 
@@ -130,33 +128,27 @@ export const setItem = (key, value, options = {}) => {
     return true;
   } catch (error) {
     if (error.name === 'QuotaExceededError') {
-      console.warn('Storage quota exceeded. Attempting cleanup...');
-      
       // Step 1: Clear expired cache
-      const expiredCleared = clearExpiredCache();
-      console.log(`Cleared ${expiredCleared} expired cache entries`);
+      clearExpiredCache();
 
       try {
         localStorage.setItem(prefixedKey, dataString);
         return true;
       } catch (retryError) {
         // Step 2: Clear old cache entries
-        const oldCleared = clearOldCache(3);
-        console.log(`Cleared ${oldCleared} old cache entries`);
+        clearOldCache(3);
 
         try {
           localStorage.setItem(prefixedKey, dataString);
           return true;
         } catch (finalError) {
           // Step 3: If still failing, clear all cache
-          console.warn('Clearing all cache to free space...');
           clearAllCache();
           
           try {
             localStorage.setItem(prefixedKey, dataString);
             return true;
           } catch (lastError) {
-            console.error('Unable to store data even after cleanup:', lastError);
             return false;
           }
         }
@@ -253,15 +245,11 @@ export const getStorageStats = () => {
  * Initialize storage (run cleanup on app start)
  */
 export const initStorage = () => {
-  const expired = clearExpiredCache();
+  clearExpiredCache();
   const stats = getStorageStats();
-  
-  console.log('Storage initialized:', stats);
-  console.log(`Cleared ${expired} expired entries`);
 
   // If storage is over 80% full, clear old cache
   if (stats.percentUsed > 80) {
-    console.warn('Storage usage high, clearing old cache...');
     clearOldCache(5);
   }
 };

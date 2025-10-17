@@ -14,12 +14,6 @@ export default defineConfig({
   },
   build: {
     sourcemap: false, // Disable sourcemaps for faster builds
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router'],
-        },
-      },
-    },
+    chunkSizeWarningLimit: 1000,
   },
 })

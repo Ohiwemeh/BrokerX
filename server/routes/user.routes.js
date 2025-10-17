@@ -50,10 +50,9 @@ router.post('/signup', async (req, res) => {
 
     // 6.5. Notify admins of new user registration
     try {
-      const notifications = await NotificationService.notifyUserRegistered(savedUser);
-      console.log('✅ Admin notifications created:', notifications.length);
+      await NotificationService.notifyUserRegistered(savedUser);
     } catch (notifError) {
-      console.error('❌ Failed to create admin notifications:', notifError);
+      console.error('Failed to create admin notifications:', notifError.message);
     }
 
     // 6.6. Emit real-time notification to admin via Socket.IO
@@ -68,9 +67,6 @@ router.post('/signup', async (req, res) => {
         message: `New user ${savedUser.name} has signed up!`
       };
       io.to('admin-room').emit('new-user-signup', eventData);
-      console.log('✅ Socket event emitted to admin-room:', eventData);
-    } else {
-      console.log('❌ Socket.IO not available');
     }
 
     // 7. Generate JWT token
@@ -105,7 +101,6 @@ router.post('/signup', async (req, res) => {
 // @route   POST /api/users/login
 // @desc    Login user
 router.post('/login', async (req, res) => {
-  const startTime = Date.now();
   try {
     const { email, password } = req.body;
 
@@ -115,29 +110,18 @@ router.post('/login', async (req, res) => {
     }
 
     // 2. Check if user exists
-    const dbStart = Date.now();
-    
-    // Check if query uses index (for debugging)
-    const queryPlan = await User.findOne({ email }).explain('executionStats');
-    console.log('📊 Query used index:', queryPlan.executionStats.executionStages.indexName || 'NO INDEX');
-    
     const user = await User.findOne({ email });
-    const dbTime = Date.now() - dbStart;
     
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // 3. Validate password
-    const bcryptStart = Date.now();
     const isMatch = await bcrypt.compare(password, user.password);
-    const bcryptTime = Date.now() - bcryptStart;
     
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
-    
-    console.log(`⚡ Login timing - DB: ${dbTime}ms, Bcrypt: ${bcryptTime}ms, Total: ${Date.now() - startTime}ms`);
 
     // 4. Generate JWT token
     const token = jwt.sign(
@@ -147,7 +131,6 @@ router.post('/login', async (req, res) => {
     );
 
     // 5. Send response
-    console.log('✅ Login successful for:', email);
     res.json({
       token,
       user: {

@@ -9,16 +9,8 @@ export const useStorageCleanup = (intervalMs = 5 * 60 * 1000) => {
   useEffect(() => {
     // Initial cleanup
     const initialCleanup = () => {
-      const cleared = clearExpiredCache();
-      const stats = getStorageStats();
-      
-      if (cleared > 0) {
-        console.log(`[Storage Cleanup] Cleared ${cleared} expired entries`);
-      }
-      
-      if (stats.percentUsed > 90) {
-        console.warn(`[Storage Warning] Storage usage at ${stats.percentUsed}%`);
-      }
+      clearExpiredCache();
+      getStorageStats();
     };
 
     initialCleanup();

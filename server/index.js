@@ -73,23 +73,12 @@ mongoose.connect(uri, mongoOptions)
   .then(async () => {
     console.log("✅ MongoDB database connection established successfully");
     
-    // Ensure indexes are created and check them
+    // Ensure indexes are created
     try {
       const User = require('./models/user.model');
       await User.createIndexes();
-      
-      // List all indexes to verify
-      const indexes = await User.collection.getIndexes();
-      console.log("✅ Database indexes:", Object.keys(indexes));
-      
-      // Check if email index exists
-      if (indexes.email_1) {
-        console.log("✅ Email index is active");
-      } else {
-        console.warn("⚠️ Email index NOT FOUND!");
-      }
     } catch (indexError) {
-      console.warn("⚠️ Index error:", indexError.message);
+      console.error('Index creation error:', indexError.message);
     }
   })
   .catch((err) => {
@@ -140,16 +129,13 @@ app.use((err, req, res, next) => {
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log('✅ Client connected:', socket.id);
-
   // Join admin room
   socket.on('join-admin', (userId) => {
     socket.join('admin-room');
-    console.log(`Admin ${userId} joined admin room`);
   });
 
   socket.on('disconnect', () => {
-    console.log('❌ Client disconnected:', socket.id);
+    // Connection closed
   });
 });
 
