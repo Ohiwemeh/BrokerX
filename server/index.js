@@ -118,7 +118,7 @@ app.use('/api/email', emailRouter);
 
 // A simple test route to make sure everything is working
 app.get('/', (req, res) => {
-  res.send('Hello from the BrokerX Backend!');
+  res.send('Hello from the pinnacletradefx Backend!');
 });
 
 // Error handling middleware

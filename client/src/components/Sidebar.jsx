@@ -34,7 +34,7 @@ const Sidebar = () => {
   return (
     <aside className="w-20 md:w-64 bg-slate-900 p-4 flex flex-col justify-between border-r border-slate-800">
       <div>
-        <div className="text-2xl font-bold text-blue-500 pb-12 px-2">BrokerX</div>
+        <div className="text-2xl font-bold text-blue-500 pb-12 px-2">pinnacletradefx</div>
         <nav className="space-y-2">
           {navLinks.map((link) => {
             // Check if the current pathname matches the link's href

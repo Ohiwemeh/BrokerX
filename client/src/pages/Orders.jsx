@@ -161,7 +161,7 @@ const DepositPage = () => {
             <div>
               <h3 className="font-semibold text-white mb-2">How to make a deposit using bank transfer</h3>
               <p className="text-sm text-slate-400 leading-relaxed">
-                On the next page you will see the credentials of our partner's bank account. Open your internet banking and proceed with a transfer to the given credentials. The money will be automatically credited to your BrokerX wallet within several minutes.
+                On the next page you will see the credentials of our partner's bank account. Open your internet banking and proceed with a transfer to the given credentials. The money will be automatically credited to your pinnacletradefx wallet within several minutes.
               </p>
             </div>
             

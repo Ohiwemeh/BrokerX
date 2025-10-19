@@ -18,7 +18,7 @@ export default function Hero() {
               </div>
 
               <p className="mt-6 text-xs text-slate-300 max-w-md">
-                * REAL TRADING INVOLVES RISK. BrokerX is a demo environment only. All trading is simulated. Past performance does not guarantee future results.
+                * REAL TRADING INVOLVES RISK.pinnacletradefx is a demo environment only. All trading is simulated. Past performance does not guarantee future results.
               </p>
             </MotionFade>
           </div>

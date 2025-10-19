@@ -268,7 +268,7 @@ const AdminPage = () => {
           <div className="flex items-center justify-between mb-2">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-blue-500">Admin Panel</h1>
-              <p className="text-xs sm:text-sm text-slate-400">BrokerX User Management</p>
+              <p className="text-xs sm:text-sm text-slate-400">pinnacle<br/>tradefx User Management</p>
             </div>
             <NotificationBell />
           </div>

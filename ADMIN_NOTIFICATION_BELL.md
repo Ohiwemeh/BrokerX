@@ -22,7 +22,7 @@ import NotificationBell from '../components/NotificationBell';
 <div className="flex items-center justify-between mb-2">
   <div>
     <h1 className="text-2xl font-bold text-blue-500">Admin Panel</h1>
-    <p className="text-sm text-slate-400">BrokerX User Management</p>
+    <p className="text-sm text-slate-400">pinnacletradefxUser Management</p>
   </div>
   <NotificationBell />
 </div>
@@ -37,7 +37,7 @@ The notification bell now appears in the **top right corner** of the Admin Panel
 ```
 ┌─────────────────────────────────────┐
 │ Admin Panel              🔔 [3]     │
-│ BrokerX User Management             │
+│pinnacletradefx User Management             │
 └─────────────────────────────────────┘
 ```
 

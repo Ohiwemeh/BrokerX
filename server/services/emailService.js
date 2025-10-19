@@ -23,7 +23,7 @@ class EmailService {
       const transporter = createTransporter();
 
       const mailOptions = {
-        from: process.env.EMAIL_FROM || 'BrokerX <noreply@brokerx.com>',
+        from: process.env.EMAIL_FROM || 'pinnacletradefx <noreply@pinnacletradefx.com>',
         to: to,
         subject: subject,
         text: textContent,
@@ -41,7 +41,7 @@ class EmailService {
 
   // Send verification email
   static async sendVerificationEmail(user) {
-    const subject = 'Account Verified - BrokerX';
+    const subject = 'Account Verified - pinnacletradefx';
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -62,7 +62,7 @@ class EmailService {
           </div>
           <div class="content">
             <h2>Hello ${user.name},</h2>
-            <p>Congratulations! Your BrokerX account has been successfully verified.</p>
+            <p>Congratulations! Your pinnacletradefx account has been successfully verified.</p>
             <p>You now have full access to all features including:</p>
             <ul>
               <li>✅ Make deposits and withdrawals</li>
@@ -73,23 +73,23 @@ class EmailService {
             <p>Get started by funding your account and exploring the markets!</p>
             <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/dashboard" class="button">Go to Dashboard</a>
             <p>If you have any questions, feel free to contact our support team.</p>
-            <p>Best regards,<br>The BrokerX Team</p>
+            <p>Best regards,<br>The pinnacletradefx Team</p>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} BrokerX. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} pinnacletradefx. All rights reserved.</p>
           </div>
         </div>
       </body>
       </html>
     `;
-    const textContent = `Hello ${user.name},\n\nCongratulations! Your BrokerX account has been successfully verified.\n\nYou now have full access to all features.\n\nBest regards,\nThe BrokerX Team`;
+    const textContent = `Hello ${user.name},\n\nCongratulations! Your pinnacletradefx account has been successfully verified.\n\nYou now have full access to all features.\n\nBest regards,\nThe BrokerX Team`;
 
     return this.sendEmail(user.email, subject, htmlContent, textContent);
   }
 
   // Send rejection email
   static async sendRejectionEmail(user, reason) {
-    const subject = 'Account Verification Update - BrokerX';
+    const subject = 'Account Verification Update - pinnacletradefx';
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -123,10 +123,10 @@ class EmailService {
             </ul>
             <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/settings" class="button">Update Profile</a>
             <p>If you have any questions or need assistance, please don't hesitate to contact us.</p>
-            <p>Best regards,<br>The BrokerX Team</p>
+            <p>Best regards,<br>The pinnacletradefx Team</p>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} BrokerX. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} pinnacletradefx. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -155,29 +155,29 @@ class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>Message from BrokerX</h1>
+            <h1>Message from pinnacletradefx</h1>
           </div>
           <div class="content">
             <h2>Hello ${user.name},</h2>
             <div class="message">${message}</div>
             <p>If you have any questions, please contact our support team.</p>
-            <p>Best regards,<br>The BrokerX Team</p>
+            <p>Best regards,<br>The pinnacletradefx Team</p>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} BrokerX. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} pinnacletradefx. All rights reserved.</p>
           </div>
         </div>
       </body>
       </html>
     `;
-    const textContent = `Hello ${user.name},\n\n${message}\n\nBest regards,\nThe BrokerX Team`;
+    const textContent = `Hello ${user.name},\n\n${message}\n\nBest regards,\nThe pinnacletradefx Team`;
 
     return this.sendEmail(user.email, subject, htmlContent, textContent);
   }
 
   // Send deposit approved email
   static async sendDepositApprovedEmail(user, amount) {
-    const subject = 'Deposit Approved - BrokerX';
+    const subject = 'Deposit Approved - pinnacletradefx';
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -204,16 +204,16 @@ class EmailService {
             <p>Your funds are now available for trading.</p>
             <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet" class="button">View Wallet</a>
             <p>Happy trading!</p>
-            <p>Best regards,<br>The BrokerX Team</p>
+            <p>Best regards,<br>The pinnacletradefx Team</p>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} BrokerX. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} pinnacletradefx. All rights reserved.</p>
           </div>
         </div>
       </body>
       </html>
     `;
-    const textContent = `Hello ${user.name},\n\nYour deposit of $${amount.toLocaleString()} has been approved and added to your account.\n\nBest regards,\nThe BrokerX Team`;
+    const textContent = `Hello ${user.name},\n\nYour deposit of $${amount.toLocaleString()} has been approved and added to your account.\n\nBest regards,\nThe pinnacletradefx Team`;
 
     return this.sendEmail(user.email, subject, htmlContent, textContent);
   }

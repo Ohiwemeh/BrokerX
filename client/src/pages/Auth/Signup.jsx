@@ -70,11 +70,13 @@ const Signup = () => {
       {/* Top bar */}
       <header className="flex justify-between items-center px-6 py-4">
         {/* Logo */}
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
-            <div className="w-3 h-3 rounded-full bg-white"></div>
-          </div>
-        </div>
+       <div className="flex items-center space-x-2">
+  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md">
+    <span className="text-white font-bold text-sm">P</span>
+  </div>
+  <span className="text-lg font-semibold text-gray-900">PinnacleTradeFX</span>
+</div>
+
 
         {/* Sign in link */}
         <a
@@ -92,7 +94,7 @@ const Signup = () => {
             Create your account
           </h1>
           <p className="text-gray-600 text-sm mb-6">
-            Access all that BrokerX has to offer with a single account.
+            Access all that pinnacletradefx has to offer with a single account.
           </p>
 
           {error && (

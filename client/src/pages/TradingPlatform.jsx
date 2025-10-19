@@ -307,7 +307,7 @@ const TradingPlatform = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-6 min-w-0">
             {/* Logo */}
-            <h1 className="text-lg sm:text-xl font-bold text-blue-500">BrokerX</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-blue-500">pinnacletradefx</h1>
             
             {/* Current Asset Info */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">

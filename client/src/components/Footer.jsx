@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 text-slate-600">
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
           <div>
-            <div className="text-2xl font-bold text-sky-700">BrokerX</div>
+            <div className="text-2xl font-bold text-sky-700">pinnacletradefx</div>
             <p className="mt-2 text-sm">Practice trading — learn with confidence.</p>
           </div>
 
@@ -26,7 +26,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 text-xs text-slate-400">© BrokerX 2025. Demo environment only.</div>
+        <div className="mt-8 text-xs text-slate-400">© pinnacletradefx 2024. Demo environment only.</div>
       </div>
     </footer>
   );
