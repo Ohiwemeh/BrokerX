@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { profileService } from '../api/services';
+import { 
+  useProfile, 
+  useUpdateProfile, 
+  useUploadProfileImage, 
+  useUploadID 
+} from '../hooks';
 import { 
   FaUserCircle, 
   FaShieldAlt, 
@@ -137,6 +142,12 @@ const ProfileSettings = () => {
 
   const profilePicInputRef = useRef(null);
 
+  // TanStack Query hooks
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const updateProfileMutation = useUpdateProfile();
+  const uploadImageMutation = useUploadProfileImage();
+  const uploadIDMutation = useUploadID();
+
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
@@ -154,28 +165,23 @@ const ProfileSettings = () => {
     profilePicInputRef.current.click();
   };
 
+  // Load profile data when available
   useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const profile = await profileService.getProfile();
-        setFormData({
-          firstName: profile.firstName || '',
-          lastName: profile.lastName || '',
-          dob: profile.dob ? profile.dob.split('T')[0] : '',
-          address: profile.address || '',
-          zipCode: profile.zipCode || '',
-          city: profile.city || '',
-          phoneNumber: profile.phoneNumber || '',
-        });
-        if (profile.profileImageUrl) {
-          setImagePreview(profile.profileImageUrl);
-        }
-      } catch (err) {
-        console.error('Failed to load profile:', err);
+    if (profile) {
+      setFormData({
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        dob: profile.dob ? profile.dob.split('T')[0] : '',
+        address: profile.address || '',
+        zipCode: profile.zipCode || '',
+        city: profile.city || '',
+        phoneNumber: profile.phoneNumber || '',
+      });
+      if (profile.profileImageUrl) {
+        setImagePreview(profile.profileImageUrl);
       }
-    };
-    loadProfile();
-  }, []);
+    }
+  }, [profile]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -185,16 +191,16 @@ const ProfileSettings = () => {
 
     try {
       // Update profile
-      await profileService.updateProfile(formData);
+      await updateProfileMutation.mutateAsync(formData);
 
       // Upload profile image if changed
       if (profileImage) {
-        await profileService.uploadProfileImage(profileImage);
+        await uploadImageMutation.mutateAsync(profileImage);
       }
 
       // Upload ID documents if provided
       if (idFront || idBack) {
-        await profileService.uploadID(idFront, idBack);
+        await uploadIDMutation.mutateAsync({ idFront, idBack });
       }
 
       setSuccess('Profile updated successfully!');

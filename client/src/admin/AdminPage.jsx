@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router';
-import { adminService, emailService } from '../api/services';
+import { 
+  useAdminUsers, 
+  useAdminUser, 
+  useVerifyUser, 
+  useRejectUser, 
+  useAddFunds, 
+  useSendEmail, 
+  useDeleteUser 
+} from '../hooks';
 import NotificationBell from '../components/NotificationBell';
 import { 
   FaUsers, 

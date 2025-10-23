@@ -17,6 +17,7 @@ import {
   FaHistory,
   FaSync
 } from 'react-icons/fa';
+import { useProfile, useDashboardStats, useTransactions, useCryptoPrices } from '../hooks';
 
 // Utility functions
 const formatPrice = (price) => {
@@ -41,55 +42,14 @@ const formatCurrency = (amount, currency = 'USD') => {
   }).format(amount);
 };
 
-// Fetch real crypto prices from CoinGecko API
-const fetchCryptoPrices = async () => {
-  try {
-    const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,binancecoin,solana,ripple&vs_currencies=usd&include_24hr_change=true'
-    );
-    const data = await response.json();
-    return {
-      bitcoin: { usd: data.bitcoin?.usd || 0, usd_24h_change: data.bitcoin?.usd_24h_change || 0 },
-      ethereum: { usd: data.ethereum?.usd || 0, usd_24h_change: data.ethereum?.usd_24h_change || 0 },
-      tether: { usd: data.tether?.usd || 0, usd_24h_change: data.tether?.usd_24h_change || 0 },
-      binancecoin: { usd: data.binancecoin?.usd || 0, usd_24h_change: data.binancecoin?.usd_24h_change || 0 },
-      solana: { usd: data.solana?.usd || 0, usd_24h_change: data.solana?.usd_24h_change || 0 },
-      ripple: { usd: data.ripple?.usd || 0, usd_24h_change: data.ripple?.usd_24h_change || 0 }
-    };
-  } catch (error) {
-    console.error('Failed to fetch crypto prices:', error);
-    // Return mock data as fallback
-    return {
-      bitcoin: { usd: 67234.50, usd_24h_change: 2.45 },
-      ethereum: { usd: 3456.78, usd_24h_change: -1.23 },
-      tether: { usd: 1.00, usd_24h_change: 0.01 },
-      binancecoin: { usd: 589.23, usd_24h_change: 1.89 },
-      solana: { usd: 145.67, usd_24h_change: 3.21 },
-      ripple: { usd: 0.52, usd_24h_change: -0.87 }
-    };
-  }
-};
-
-// Mock user data
-const getMockUserData = () => ({
-  user: {
-    name: 'John Trader',
-    email: 'john@example.com',
-    profileImageUrl: null,
-    accountStatus: 'Verified',
-    currency: 'USD'
-  },
-  stats: {
-    totalDeposit: 25000,
-    profit: 3750,
-    totalWithdrawal: 5000,
-    accountStatus: 'Verified'
-  },
-  transactions: [
-    { date: '2025-10-20', id: 'TXN001', type: 'Deposit', name: 'Bank Transfer', value: '$5,000', status: 'Completed' },
-    { date: '2025-10-19', id: 'TXN002', type: 'Trade', name: 'BTC/USD', value: '$1,200', status: 'Completed' },
-    { date: '2025-10-18', id: 'TXN003', type: 'Withdrawal', name: 'Bank Transfer', value: '$2,000', status: 'Pending' }
-  ]
+// Format transaction for display
+const formatTransaction = (tx) => ({
+  date: new Date(tx.createdAt).toLocaleDateString(),
+  id: tx._id,
+  type: tx.type.charAt(0).toUpperCase() + tx.type.slice(1),
+  name: tx.method || tx.type,
+  value: `$${tx.amount.toLocaleString()}`,
+  status: tx.status.charAt(0).toUpperCase() + tx.status.slice(1)
 });
 
 // Verification Badge Component
@@ -187,41 +147,23 @@ const TransactionRow = ({ tx }) => (
 
 // Main Dashboard Component
 const Dashboard = () => {
-  const [mockData] = useState(getMockUserData());
-  const [cryptoPrices, setCryptoPrices] = useState(null);
-  const [cryptoLoading, setCryptoLoading] = useState(true);
   const [selectedCrypto, setSelectedCrypto] = useState('bitcoin');
   const [cryptoChartData, setCryptoChartData] = useState([]);
-  const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { user, stats, transactions } = mockData;
+  // TanStack Query hooks
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: dashboardStats, isLoading: statsLoading } = useDashboardStats();
+  const { data: transactionsData, isLoading: transactionsLoading } = useTransactions({ limit: 3 });
+  const { data: cryptoPrices, isLoading: cryptoLoading, dataUpdatedAt, refetch } = useCryptoPrices();
 
-  // Fetch crypto prices on mount and set up interval
-  useEffect(() => {
-    const loadPrices = async () => {
-      setCryptoLoading(true);
-      const prices = await fetchCryptoPrices();
-      setCryptoPrices(prices);
-      setCryptoLoading(false);
-      setLastUpdate(new Date());
-    };
-
-    loadPrices();
-    
-    // Refresh prices every 60 seconds
-    const interval = setInterval(loadPrices, 60000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  // Extract data with fallbacks
+  const user = profile || { firstName: 'User', email: '', accountStatus: 'Pending' };
+  const stats = dashboardStats?.stats || { totalDeposit: 0, profit: 0, totalWithdrawal: 0 };
+  const transactions = transactionsData?.transactions?.slice(0, 3).map(formatTransaction) || [];
 
   // Manual refresh function
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    const prices = await fetchCryptoPrices();
-    setCryptoPrices(prices);
-    setLastUpdate(new Date());
-    setIsRefreshing(false);
+  const handleRefresh = () => {
+    refetch();
   };
 
   // Generate chart data
@@ -254,11 +196,24 @@ const Dashboard = () => {
 
   // Format last update time
   const getLastUpdateText = () => {
-    const seconds = Math.floor((new Date() - lastUpdate) / 1000);
+    if (!dataUpdatedAt) return 'Updating...';
+    const seconds = Math.floor((new Date() - dataUpdatedAt) / 1000);
     if (seconds < 60) return `Updated ${seconds}s ago`;
     const minutes = Math.floor(seconds / 60);
     return `Updated ${minutes}m ago`;
   };
+
+  // Show loading state
+  if (profileLoading || statsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -270,7 +225,7 @@ const Dashboard = () => {
               {user.profileImageUrl ? (
                 <img 
                   src={user.profileImageUrl} 
-                  alt={user.name} 
+                  alt={user.firstName} 
                   className="w-12 h-12 rounded-full object-cover border-2 border-blue-500 shadow-lg shadow-blue-500/20"
                 />
               ) : (
@@ -280,7 +235,7 @@ const Dashboard = () => {
               )}
               <div className="min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-0.5">
-                  <h2 className="text-lg font-bold text-white truncate">Hi, {user.name.split(' ')[0]}! 👋</h2>
+                  <h2 className="text-lg font-bold text-white truncate">Hi, {user.firstName || 'User'}! 👋</h2>
                   <VerificationBadge status={user.accountStatus} />
                 </div>
                 <p className="text-xs text-slate-400">{user.email}</p>
@@ -315,26 +270,24 @@ const Dashboard = () => {
             <StatCard 
               icon={<FaWallet />} 
               title="Total Deposit" 
-              value={formatCurrency(stats.totalDeposit, user.currency)} 
-              trend={5.2}
+              value={formatCurrency(stats.totalDeposit || 0, user.currency || 'USD')} 
             />
             <StatCard 
               icon={<FaChartLine />} 
               title="Total Profit" 
-              value={formatCurrency(stats.profit, user.currency)} 
+              value={formatCurrency(stats.profit || 0, user.currency || 'USD')} 
               color="text-emerald-400"
-              trend={12.8}
             />
             <StatCard 
               icon={<FaArrowCircleDown />} 
               title="Withdrawals" 
-              value={formatCurrency(stats.totalWithdrawal, user.currency)} 
+              value={formatCurrency(stats.totalWithdrawal || 0, user.currency || 'USD')} 
               color="text-blue-400"
             />
             <StatCard 
               icon={<FaStar />} 
               title="Account Status" 
-              value={stats.accountStatus}
+              value={user.accountStatus || 'Pending'}
               color="text-emerald-400"
             />
           </div>
@@ -346,10 +299,10 @@ const Dashboard = () => {
             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Market Activity</h3>
             <button 
               onClick={handleRefresh}
-              disabled={isRefreshing}
+              disabled={cryptoLoading}
               className="flex items-center gap-2 text-xs text-slate-400 hover:text-blue-400 transition-colors"
             >
-              <FaSync className={`${isRefreshing ? 'animate-spin' : ''}`} />
+              <FaSync className={`${cryptoLoading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">{getLastUpdateText()}</span>
             </button>
           </div>
@@ -497,9 +450,19 @@ const Dashboard = () => {
               Recent Activity
             </h3>
             <div className="space-y-3">
-              {transactions.map((tx, index) => (
-                <TransactionRow key={index} tx={tx} />
-              ))}
+              {transactionsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                </div>
+              ) : transactions.length > 0 ? (
+                transactions.map((tx, index) => (
+                  <TransactionRow key={tx.id || index} tx={tx} />
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-400 text-sm">
+                  No recent transactions
+                </div>
+              )}
             </div>
             <button className="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-semibold transition-all border border-slate-700/50 hover:border-slate-600">
               View All Transactions
