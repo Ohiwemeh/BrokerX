@@ -9,6 +9,7 @@ import {
   useSendEmail, 
   useDeleteUser 
 } from '../hooks';
+import { adminService, emailService } from '../api/services';
 import NotificationBell from '../components/NotificationBell';
 import { 
   FaUsers, 
@@ -99,86 +100,59 @@ const Modal = ({ title, children, onClose }) => (
 // --- Main Admin Page Component ---
 
 const AdminPage = () => {
-  const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedUserDetails, setSelectedUserDetails] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // Use TanStack Query hooks
+  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useAdminUsers({ search: searchTerm });
+  const { data: userDetailsData, isLoading: userDetailsLoading } = useAdminUser(selectedUserId);
+  
+  const verifyUserMutation = useVerifyUser();
+  const rejectUserMutation = useRejectUser();
+  const deleteUserMutation = useDeleteUser();
 
-  useEffect(() => {
-    if (selectedUser) {
-      fetchUserDetails(selectedUser._id);
-    }
-  }, [selectedUser]);
-
-  const fetchUsers = async () => {
-    try {
-      const data = await adminService.getUsers({ search: searchTerm });
-      setUsers(data.users || []);
-    } catch (err) {
-      console.error('Failed to load users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUserDetails = async (userId) => {
-    try {
-      const data = await adminService.getUser(userId);
-      setSelectedUserDetails(data);
-    } catch (err) {
-      console.error('Failed to load user details:', err);
-    }
-  };
+  const users = usersData?.users || [];
+  const selectedUser = selectedUserId ? users.find(u => u._id === selectedUserId) : null;
+  const selectedUserDetails = userDetailsData?.user || selectedUser;
 
   const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleVerifyUser = async () => {
-    if (!selectedUser) return;
+    if (!selectedUserId) return;
     try {
-      await adminService.verifyUser(selectedUser._id);
+      await verifyUserMutation.mutateAsync(selectedUserId);
       alert('User verified successfully!');
-      fetchUsers();
-      fetchUserDetails(selectedUser._id);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to verify user');
     }
   };
 
   const handleRejectUser = async () => {
-    if (!selectedUser) return;
+    if (!selectedUserId) return;
     const reason = prompt('Enter rejection reason:');
     if (!reason) return;
     try {
-      await adminService.rejectUser(selectedUser._id, reason);
+      await rejectUserMutation.mutateAsync({ userId: selectedUserId, reason });
       alert('User rejected');
-      fetchUsers();
-      fetchUserDetails(selectedUser._id);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to reject user');
     }
   };
 
   const handleDeleteUser = async () => {
-    if (!selectedUser) return;
+    if (!selectedUserId) return;
     if (!confirm('Are you sure you want to delete this user?')) return;
     try {
-      await adminService.deleteUser(selectedUser._id);
+      await deleteUserMutation.mutateAsync(selectedUserId);
       alert('User deleted successfully');
-      setSelectedUser(null);
-      setSelectedUserDetails(null);
-      fetchUsers();
+      setSelectedUserId(null);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to delete user');
     }
@@ -199,11 +173,11 @@ const AdminPage = () => {
                       const amount = e.target.amount.value;
                       const description = e.target.description.value;
                       try {
-                          await adminService.addFunds(selectedUser._id, parseFloat(amount), description);
+                          await adminService.addFunds(selectedUserId, parseFloat(amount), description);
                           alert('Funds added successfully!');
                           setIsModalOpen(false);
-                          fetchUsers();
-                          fetchUserDetails(selectedUser._id);
+                          refetchUsers();
+                          setSelectedUserId(null);
                       } catch (err) {
                           alert(err.response?.data?.message || 'Failed to add funds');
                       }
@@ -233,9 +207,10 @@ const AdminPage = () => {
                           submitButton.disabled = true;
                           submitButton.textContent = 'Sending...';
                           
-                          await emailService.sendEmail(selectedUser._id, subject, message);
+                          await emailService.sendEmail(selectedUserId, subject, message);
                           alert(`Email sent successfully to ${selectedUser.email}!`);
                           setIsModalOpen(false);
+                          setSelectedUserId(null);
                       } catch (err) {
                           alert(err.response?.data?.message || 'Failed to send email. Please check your email configuration.');
                           submitButton.disabled = false;
@@ -265,7 +240,6 @@ const AdminPage = () => {
       setModalContent({ title, content });
       setIsModalOpen(true);
   };
-
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-slate-900 text-white font-sans">
@@ -302,7 +276,7 @@ const AdminPage = () => {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {loading ? (
+          {usersLoading ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
@@ -326,8 +300,8 @@ const AdminPage = () => {
                 return (
                     <li
                         key={user._id}
-                        onClick={() => setSelectedUser(user)}
-                        className={`p-3 sm:p-4 cursor-pointer hover:bg-slate-700/50 transition-colors ${selectedUser?._id === user._id ? 'bg-slate-700' : ''}`}
+                        onClick={() => setSelectedUserId(user._id)}
+                        className={`p-3 sm:p-4 cursor-pointer hover:bg-slate-700/50 transition-colors ${selectedUserId === user._id ? 'bg-slate-700' : ''}`}
                     >
                         <div className="flex justify-between items-center gap-2">
                             <div className="min-w-0 flex-1">
