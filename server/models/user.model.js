@@ -127,6 +127,14 @@ const userSchema = new mongoose.Schema({
   twoFactorEnabled: {
     type: Boolean,
     default: false
+  },
+  // Withdrawal verification code
+  withdrawalCode: {
+    type: String,
+    trim: true
+  },
+  withdrawalCodeExpiry: {
+    type: Date
   }
 }, {
   timestamps: true // Automatically adds 'createdAt' and 'updatedAt' fields

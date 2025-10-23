@@ -412,6 +412,44 @@ router.put('/transactions/:id/update-status', async (req, res) => {
   }
 });
 
+// @route   POST /api/admin/users/:id/generate-withdrawal-code
+// @desc    Generate withdrawal verification code for user
+router.post('/users/:id/generate-withdrawal-code', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate random 8-character alphanumeric code
+    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+    
+    // Set code expiry to 24 hours from now
+    const expiry = new Date();
+    expiry.setHours(expiry.getHours() + 24);
+
+    user.withdrawalCode = code;
+    user.withdrawalCodeExpiry = expiry;
+    await user.save();
+
+    res.json({
+      message: 'Withdrawal code generated successfully',
+      code,
+      expiresAt: expiry,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/admin/stats
 // @desc    Get admin dashboard stats
 router.get('/stats', async (req, res) => {

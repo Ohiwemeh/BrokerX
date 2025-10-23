@@ -1,4 +1,5 @@
 import React, { useState, useEffect, memo } from 'react';
+import { useNavigate } from 'react-router';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { 
   FaBitcoin, 
@@ -147,6 +148,7 @@ const TransactionRow = ({ tx }) => (
 
 // Main Dashboard Component
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [selectedCrypto, setSelectedCrypto] = useState('bitcoin');
   const [cryptoChartData, setCryptoChartData] = useState([]);
 
@@ -157,7 +159,8 @@ const Dashboard = () => {
   const { data: cryptoPrices, isLoading: cryptoLoading, dataUpdatedAt, refetch } = useCryptoPrices();
 
   // Extract data with fallbacks
-  const user = profile || { firstName: 'User', email: '', accountStatus: 'Pending' };
+  const user = profile || { name: 'User', firstName: 'User', email: '', accountStatus: 'Pending', balance: 0 };
+  const displayName = user.firstName || user.name?.split(' ')[0] || 'User';
   const stats = dashboardStats?.stats || { totalDeposit: 0, profit: 0, totalWithdrawal: 0 };
   const transactions = transactionsData?.transactions?.slice(0, 3).map(formatTransaction) || [];
 
@@ -235,7 +238,7 @@ const Dashboard = () => {
               )}
               <div className="min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-0.5">
-                  <h2 className="text-lg font-bold text-white truncate">Hi, {user.firstName || 'User'}! 👋</h2>
+                  <h2 className="text-lg font-bold text-white truncate">Hi, {displayName}! 👋</h2>
                   <VerificationBadge status={user.accountStatus} />
                 </div>
                 <p className="text-xs text-slate-400">{user.email}</p>
@@ -245,15 +248,24 @@ const Dashboard = () => {
 
           {/* Quick Actions - Mobile Optimized */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <button className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl hover:from-blue-500 hover:to-blue-600 transition-all shadow-lg shadow-blue-500/20 active:scale-95">
+            <button 
+              onClick={() => navigate('/depositpage')}
+              className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl hover:from-blue-500 hover:to-blue-600 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+            >
               <FaWallet className="text-xl" />
               <span className="text-xs font-semibold">Deposit</span>
             </button>
-            <button className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl hover:from-emerald-500 hover:to-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95">
+            <button 
+              onClick={() => navigate('/markets')}
+              className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl hover:from-emerald-500 hover:to-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+            >
               <FaExchangeAlt className="text-xl" />
               <span className="text-xs font-semibold">Trade</span>
             </button>
-            <button className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg shadow-purple-500/20 active:scale-95">
+            <button 
+              onClick={() => navigate('/withdraw')}
+              className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg shadow-purple-500/20 active:scale-95"
+            >
               <FaArrowCircleDown className="text-xl" />
               <span className="text-xs font-semibold">Withdraw</span>
             </button>

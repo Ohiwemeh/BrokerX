@@ -17,6 +17,7 @@ const Portfolio = lazy(() => import("./pages/Portfolio"));
 const DepositPage = lazy(() => import("./pages/Orders"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const WalletPage = lazy(() => import("./pages/WalletPage"));
+const WithdrawPage = lazy(() => import("./pages/WithdrawPage"));
 const TransactionsPage = lazy(() => import("./pages/TransactionsPage"));
 const TradingPlatform = lazy(() => import("./pages/TradingPlatform"));
 const AdminPage = lazy(() => import("./admin/AdminPage"));
@@ -72,6 +73,7 @@ export default function AppRouter() {
             <Route path="/depositpage" element={<DepositPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/withdraw" element={<WithdrawPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
             
           </Route>

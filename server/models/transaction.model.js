@@ -20,7 +20,7 @@ const transactionSchema = new mongoose.Schema({
   },
   method: {
     type: String,
-    enum: ['Credit/Debit Card', 'Bank Transfer', 'USDT', 'Internal'],
+    enum: ['Credit/Debit Card', 'Bank Transfer', 'USDT', 'Internal', 'bank', 'crypto', 'card', 'paypal'],
     default: 'Internal'
   },
   amount: {
@@ -49,6 +49,25 @@ const transactionSchema = new mongoose.Schema({
   adminNotes: {
     type: String,
     trim: true
+  },
+  // Withdrawal details
+  withdrawalDetails: {
+    accountNumber: String,
+    accountName: String,
+    bankName: String,
+    routingNumber: String,
+    walletAddress: String,
+    email: String
+  },
+  // Verification code for withdrawals
+  verificationCode: {
+    type: String,
+    trim: true
+  },
+  // Code verified status
+  codeVerified: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

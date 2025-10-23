@@ -136,12 +136,8 @@ export const transactionService = {
     return response.data;
   },
 
-  createWithdrawal: async (amount, method, currency = 'USD') => {
-    const response = await api.post('/transactions/withdrawal', {
-      amount,
-      method,
-      currency,
-    });
+  createWithdrawal: async (withdrawalData) => {
+    const response = await api.post('/transactions/withdrawal', withdrawalData);
     return response.data;
   },
 
@@ -229,6 +225,11 @@ export const adminService = {
 
   updateTransactionStatus: async (id, status) => {
     const response = await api.put(`/admin/transactions/${id}/update-status`, { status });
+    return response.data;
+  },
+
+  generateWithdrawalCode: async (userId) => {
+    const response = await api.post(`/admin/users/${userId}/generate-withdrawal-code`);
     return response.data;
   },
 };

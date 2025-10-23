@@ -158,6 +158,31 @@ const AdminPage = () => {
     }
   };
 
+  const handleGenerateWithdrawalCode = async () => {
+    if (!selectedUserId) return;
+    try {
+      const response = await adminService.generateWithdrawalCode(selectedUserId);
+      const code = response.code;
+      const expiresAt = new Date(response.expiresAt).toLocaleString();
+      
+      // Show code in alert
+      alert(`Withdrawal Code Generated!\n\nCode: ${code}\nExpires: ${expiresAt}\n\nPlease send this code to ${selectedUser.email} via email.`);
+      
+      // Optionally auto-send email with the code
+      const sendEmail = confirm('Would you like to send this code to the user via email now?');
+      if (sendEmail) {
+        await emailService.sendEmail(
+          selectedUserId,
+          'Your Withdrawal Verification Code',
+          `Dear ${selectedUser.name},\n\nYour withdrawal verification code is: ${code}\n\nThis code will expire on ${expiresAt}.\n\nPlease use this code to complete your withdrawal request.\n\nBest regards,\nPinnacle TradeFX Team`
+        );
+        alert('Code sent successfully to user email!');
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to generate withdrawal code');
+    }
+  };
+
   const openModal = (type) => {
       if (!selectedUser) return;
       
@@ -418,7 +443,7 @@ const AdminPage = () => {
                       <span>Add Funds</span>
                     </button>
                     <ActionButton icon={<FaEnvelope/>} label="Send Email" onClick={() => openModal('sendEmail')}/>
-                    <ActionButton icon={<FaKey/>} label="Generate Code" onClick={() => alert(`Generated Code: ${Math.random().toString(36).substring(2, 10).toUpperCase()}`)}/>
+                    <ActionButton icon={<FaKey/>} label="Withdrawal Code" onClick={handleGenerateWithdrawalCode} className="bg-purple-600 hover:bg-purple-500"/>
                     <ActionButton icon={<FaTrash/>} label="Delete User" onClick={handleDeleteUser} className="bg-red-600/80 hover:bg-red-500"/>
                 </div>
             </div>

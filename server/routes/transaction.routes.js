@@ -133,13 +133,17 @@ router.post('/deposit', verifyToken, async (req, res) => {
 });
 
 // @route   POST /api/transactions/withdrawal
-// @desc    Create withdrawal transaction
+// @desc    Create withdrawal transaction with verification code
 router.post('/withdrawal', verifyToken, async (req, res) => {
   try {
-    const { amount, method, currency } = req.body;
+    const { amount, method, currency, details, verificationCode } = req.body;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: 'Invalid amount' });
+    }
+
+    if (!verificationCode) {
+      return res.status(400).json({ message: 'Verification code is required' });
     }
 
     const user = await User.findById(req.user._id);
@@ -147,6 +151,16 @@ router.post('/withdrawal', verifyToken, async (req, res) => {
     // Check if user has sufficient balance
     if (user.balance < amount) {
       return res.status(400).json({ message: 'Insufficient balance' });
+    }
+
+    // Verify withdrawal code
+    if (!user.withdrawalCode || user.withdrawalCode !== verificationCode.toUpperCase()) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    // Check if code is expired (24 hours validity)
+    if (user.withdrawalCodeExpiry && new Date() > user.withdrawalCodeExpiry) {
+      return res.status(400).json({ message: 'Verification code has expired. Please request a new code from admin.' });
     }
 
     // Generate transaction ID
@@ -161,10 +175,18 @@ router.post('/withdrawal', verifyToken, async (req, res) => {
       amount,
       currency: currency || 'USD',
       status: 'Pending',
-      description: `Withdrawal request`
+      description: `Withdrawal request via ${method}`,
+      withdrawalDetails: details,
+      verificationCode: verificationCode.toUpperCase(),
+      codeVerified: true
     });
 
     await transaction.save();
+
+    // Clear the used withdrawal code
+    user.withdrawalCode = null;
+    user.withdrawalCodeExpiry = null;
+    await user.save();
 
     // Notify admins of new withdrawal request
     await NotificationService.notifyWithdrawalRequest(user, amount, transactionId);
@@ -184,7 +206,7 @@ router.post('/withdrawal', verifyToken, async (req, res) => {
     }
 
     res.status(201).json({
-      message: 'Withdrawal request created successfully',
+      message: 'Withdrawal request created successfully. Your request is pending admin approval.',
       transaction
     });
 
