@@ -6,8 +6,6 @@ const bcrypt = require('bcryptjs'); // Import bcrypt for password hashing
 const jwt = require('jsonwebtoken'); // Import jsonwebtoken for token generation
 const NotificationService = require('../services/notificationService');
 
-
-
 // @route   POST /api/users/signup
 // @desc    Register a new user
 router.post('/signup', async (req, res) => {
@@ -48,27 +46,6 @@ router.post('/signup', async (req, res) => {
     // 6. Save the user to the database
     const savedUser = await newUser.save();
 
-    // 6.5. Notify admins of new user registration
-    try {
-      await NotificationService.notifyUserRegistered(savedUser);
-    } catch (notifError) {
-      console.error('Failed to create admin notifications:', notifError.message);
-    }
-
-    // 6.6. Emit real-time notification to admin via Socket.IO
-    const io = req.app.get('io');
-    if (io) {
-      const eventData = {
-        userId: savedUser._id,
-        name: savedUser.name,
-        email: savedUser.email,
-        country: savedUser.country,
-        timestamp: new Date(),
-        message: `New user ${savedUser.name} has signed up!`
-      };
-      io.to('admin-room').emit('new-user-signup', eventData);
-    }
-
     // 7. Generate JWT token
     const token = jwt.sign(
       { id: savedUser._id, email: savedUser.email, role: savedUser.role },
@@ -91,6 +68,29 @@ router.post('/signup', async (req, res) => {
         accountStatus: savedUser.accountStatus,
       }
     });
+    
+    // 9. Send notifications AFTER sending the response
+    // (This is the non-blocking fix I mentioned earlier)
+    try {
+      // NOTE: No 'await' here
+      NotificationService.notifyUserRegistered(savedUser); 
+    } catch (notifError) {
+      console.error('Failed to create admin notifications:', notifError.message);
+    }
+
+    // 10. Emit real-time notification to admin via Socket.IO
+    const io = req.app.get('io');
+    if (io) {
+      const eventData = {
+        userId: savedUser._id,
+        name: savedUser.name,
+        email: savedUser.email,
+        country: savedUser.country,
+        timestamp: new Date(),
+        message: `New user ${savedUser.name} has signed up!`
+      };
+      io.to('admin-room').emit('new-user-signup', eventData);
+    }
 
   } catch (error) {
     console.error(error);
@@ -109,19 +109,41 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Please enter all fields' });
     }
 
+    // **********************************
+    // *** START DEBUGGING TIMER 1 ***
+    // **********************************
+    console.log(`[LOGIN] Attempting for user: ${email}`);
+    console.time('LOGIN_findUser');
+    
     // 2. Check if user exists
     const user = await User.findOne({ email });
     
+    console.timeEnd('LOGIN_findUser'); // <-- This will print the time
+    // **********************************
+    
     if (!user) {
+      console.log(`[LOGIN] FAILED: User not found: ${email}`);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    // **********************************
+    // *** START DEBUGGING TIMER 2 ***
+    // **********************************
+    console.log(`[LOGIN] User found. Comparing password...`);
+    console.time('LOGIN_comparePassword');
+    
     // 3. Validate password
     const isMatch = await bcrypt.compare(password, user.password);
     
+    console.timeEnd('LOGIN_comparePassword'); // <-- This will print the time
+    // **********************************
+
     if (!isMatch) {
+      console.log(`[LOGIN] FAILED: Invalid password for: ${email}`);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
+
+    console.log(`[LOGIN] SUCCESS: ${email}`);
 
     // 4. Generate JWT token
     const token = jwt.sign(
@@ -131,6 +153,7 @@ router.post('/login', async (req, res) => {
     );
 
     // 5. Send response
+    // (This is the minimal response I suggested earlier)
     res.json({
       token,
       user: {
@@ -138,15 +161,8 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        country: user.country,
-        currency: user.currency,
-        balance: user.balance,
-        profit: user.profit,
-        totalDeposit: user.totalDeposit,
-        totalWithdrawal: user.totalWithdrawal,
-        walletId: user.walletId,
         accountStatus: user.accountStatus,
-        isProfileComplete: user.isProfileComplete,
+        isProfileComplete: user.isProfileComplete
       }
     });
 
