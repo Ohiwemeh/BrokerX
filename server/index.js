@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
-const fs =fs');
+const fs = require('fs');
 const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
