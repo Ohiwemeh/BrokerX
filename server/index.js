@@ -1,10 +1,8 @@
-// server/index.js
-
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
-const fs = require('fs');
+const fs =fs');
 const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
@@ -17,7 +15,7 @@ const server = http.createServer(app);
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://broker-x-sand.vercel.app',
+  'https.broker-x-sand.vercel.app',
   process.env.CLIENT_URL
 ].filter(Boolean);
 
@@ -107,6 +105,19 @@ const adminRouter = require('./routes/admin.routes');
 const notificationRouter = require('./routes/notification.routes');
 const emailRouter = require('./routes/email.routes');
 
+// A simple test route to make sure everything is working
+app.get('/', (req, res) => {
+  res.send('Hello from the pinnacletradefx Backend!');
+});
+
+// **********************************
+// *** NEW KEEP-ALIVE PING ROUTE ***
+// **********************************
+app.get('/api/ping', (req, res) => {
+  console.log('Ping received!'); // Optional: so you can see it in your logs
+  res.status(200).json({ message: 'pong' });
+});
+
 // Use routes
 app.use('/api/users', userRouter);
 app.use('/api/profile', profileRouter);
@@ -115,11 +126,6 @@ app.use('/api/wallet', walletRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/email', emailRouter);
-
-// A simple test route to make sure everything is working
-app.get('/', (req, res) => {
-  res.send('Hello from the pinnacletradefx Backend!');
-});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
