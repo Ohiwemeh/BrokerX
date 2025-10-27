@@ -10,7 +10,8 @@ export const useTransactions = (filters = {}, options = {}) => {
   return useQuery({
     queryKey: ['transactions', filters],
     queryFn: () => transactionService.getTransactions(filters),
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes - reduce refetching
+    gcTime: 1000 * 60 * 10, // 10 minutes cache
     ...options,
   });
 };
@@ -37,7 +38,8 @@ export const useDashboardStats = (options = {}) => {
   return useQuery({
     queryKey: ['dashboardStats'],
     queryFn: () => transactionService.getDashboardStats(false),
-    staleTime: 1000 * 60 * 2, // 2 minutes - refresh more frequently for dashboard
+    staleTime: 1000 * 60 * 5, // 5 minutes - reduce refetching
+    gcTime: 1000 * 60 * 10, // 10 minutes cache
     ...options,
   });
 };
@@ -52,10 +54,9 @@ export const useCreateDeposit = () => {
     mutationFn: ({ amount, method, currency = 'USD' }) => 
       transactionService.createDeposit(amount, method, currency),
     onSuccess: () => {
-      // Invalidate transactions and wallet to reflect new deposit
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['wallet'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+      // Only invalidate necessary queries
+      queryClient.invalidateQueries({ queryKey: ['transactions'], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'], exact: true });
     },
   });
 };
@@ -67,13 +68,12 @@ export const useCreateWithdrawal = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ amount, method, currency = 'USD' }) => 
-      transactionService.createWithdrawal(amount, method, currency),
+    mutationFn: (withdrawalData) => 
+      transactionService.createWithdrawal(withdrawalData),
     onSuccess: () => {
-      // Invalidate transactions and wallet to reflect new withdrawal
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['wallet'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+      // Only invalidate necessary queries
+      queryClient.invalidateQueries({ queryKey: ['transactions'], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'], exact: true });
     },
   });
 };

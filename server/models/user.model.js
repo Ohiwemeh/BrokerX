@@ -140,7 +140,11 @@ const userSchema = new mongoose.Schema({
   timestamps: true // Automatically adds 'createdAt' and 'updatedAt' fields
 });
 
-// Note: Index on email is auto-created by unique: true in schema
+// Performance indexes
+userSchema.index({ email: 1 }); // Already unique, but explicit
+userSchema.index({ accountStatus: 1 }); // For filtering by status
+userSchema.index({ createdAt: -1 }); // For sorting by creation date
+userSchema.index({ name: 'text', email: 'text' }); // For text search
 
 const User = mongoose.model('User', userSchema);
 

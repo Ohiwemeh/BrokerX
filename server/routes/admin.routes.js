@@ -34,11 +34,13 @@ router.get('/users', async (req, res) => {
     // Pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    // Use lean() for better performance (returns plain JS objects)
     const users = await User.find(query)
-      .select('-password')
+      .select('name email accountStatus balance createdAt')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit))
+      .lean();
 
     const total = await User.countDocuments(query);
 

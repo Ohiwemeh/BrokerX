@@ -2,7 +2,7 @@
 
 const nodemailer = require('nodemailer');
 
-// Create transporter
+// Create transporter with timeout
 const createTransporter = () => {
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
@@ -12,6 +12,9 @@ const createTransporter = () => {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD,
     },
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000, // 10 seconds
+    socketTimeout: 15000, // 15 seconds
   });
 };
 

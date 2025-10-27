@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useProfile, useCreateWithdrawal } from '../hooks';
+import LoadingButton from '../components/LoadingButton';
 import { 
   FaArrowLeft,
   FaWallet,
@@ -367,23 +368,15 @@ const WithdrawPage = () => {
                 </div>
               </div>
 
-              <button
+              <LoadingButton
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition flex items-center justify-center gap-2"
+                isLoading={isSubmitting}
+                loadingText="Processing..."
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition flex items-center justify-center gap-2"
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Processing...</span>
-                  </>
-                ) : (
-                  <>
-                    <FaWallet />
-                    <span>Submit Withdrawal Request</span>
-                  </>
-                )}
-              </button>
+                <FaWallet />
+                <span>Submit Withdrawal Request</span>
+              </LoadingButton>
             </form>
           </div>
         )}

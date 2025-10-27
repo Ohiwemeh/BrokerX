@@ -10,7 +10,8 @@ export const useAdminUsers = (filters = {}, options = {}) => {
   return useQuery({
     queryKey: ['adminUsers', filters],
     queryFn: () => adminService.getUsers(filters),
-    staleTime: 1000 * 60 * 3, // 3 minutes
+    staleTime: 1000 * 60 * 10, // 10 minutes - reduce refetching
+    gcTime: 1000 * 60 * 20, // 20 minutes cache
     ...options,
   });
 };
@@ -25,7 +26,8 @@ export const useAdminUser = (id, options = {}) => {
     queryKey: ['adminUser', id],
     queryFn: () => adminService.getUser(id),
     enabled: !!id, // Only run if ID exists
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    gcTime: 1000 * 60 * 20, // 20 minutes cache
     ...options,
   });
 };
@@ -66,10 +68,8 @@ export const useVerifyUser = () => {
   return useMutation({
     mutationFn: (userId) => adminService.verifyUser(userId),
     onSuccess: (data, userId) => {
-      // Invalidate user queries to reflect verification
-      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
-      queryClient.invalidateQueries({ queryKey: ['adminUser', userId] });
-      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+      // Only invalidate specific user, not entire list
+      queryClient.invalidateQueries({ queryKey: ['adminUser', userId], exact: true });
     },
   });
 };
@@ -83,10 +83,8 @@ export const useRejectUser = () => {
   return useMutation({
     mutationFn: ({ userId, reason }) => adminService.rejectUser(userId, reason),
     onSuccess: (data, { userId }) => {
-      // Invalidate user queries to reflect rejection
-      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
-      queryClient.invalidateQueries({ queryKey: ['adminUser', userId] });
-      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+      // Only invalidate specific user
+      queryClient.invalidateQueries({ queryKey: ['adminUser', userId], exact: true });
     },
   });
 };
@@ -101,10 +99,8 @@ export const useAddFunds = () => {
     mutationFn: ({ userId, amount, description }) => 
       adminService.addFunds(userId, amount, description),
     onSuccess: (data, { userId }) => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['adminUser', userId] });
-      queryClient.invalidateQueries({ queryKey: ['adminTransactions'] });
-      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+      // Only invalidate specific user data
+      queryClient.invalidateQueries({ queryKey: ['adminUser', userId], exact: true });
     },
   });
 };
@@ -127,10 +123,10 @@ export const useDeleteUser = () => {
 
   return useMutation({
     mutationFn: (userId) => adminService.deleteUser(userId),
-    onSuccess: () => {
-      // Invalidate user list and stats
+    onSuccess: (data, userId) => {
+      // Remove from cache and invalidate list
+      queryClient.removeQueries({ queryKey: ['adminUser', userId] });
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
-      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
     },
   });
 };
@@ -145,10 +141,8 @@ export const useUpdateTransactionStatus = () => {
     mutationFn: ({ transactionId, status }) => 
       adminService.updateTransactionStatus(transactionId, status),
     onSuccess: (data, { transactionId }) => {
-      // Invalidate transaction queries
-      queryClient.invalidateQueries({ queryKey: ['adminTransactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transaction', transactionId] });
-      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+      // Only invalidate specific transaction
+      queryClient.invalidateQueries({ queryKey: ['transaction', transactionId], exact: true });
     },
   });
 };

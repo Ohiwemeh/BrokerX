@@ -10,7 +10,8 @@ export const useProfile = (options = {}) => {
   return useQuery({
     queryKey: ['profile'],
     queryFn: () => profileService.getProfile(false), // Don't use cache, let React Query handle it
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 15, // 15 minutes - profile doesn't change often
+    gcTime: 1000 * 60 * 30, // 30 minutes cache
     ...options,
   });
 };
@@ -24,10 +25,8 @@ export const useUpdateProfile = () => {
   return useMutation({
     mutationFn: (profileData) => profileService.updateProfile(profileData),
     onSuccess: (data) => {
-      // Update the profile cache with new data
+      // Only update cache, don't refetch
       queryClient.setQueryData(['profile'], data);
-      // Or invalidate to refetch
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 };

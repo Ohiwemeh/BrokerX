@@ -39,8 +39,10 @@ export const useCryptoPrices = (options = {}) => {
   return useQuery({
     queryKey: ['cryptoPrices'],
     queryFn: fetchCryptoPrices,
-    staleTime: 1000 * 60, // 1 minute - crypto prices change frequently
-    refetchInterval: 1000 * 60, // Auto-refetch every 1 minute
+    staleTime: 1000 * 60 * 5, // 5 minutes - reduce API calls
+    gcTime: 1000 * 60 * 10, // 10 minutes cache
+    refetchInterval: false, // Disable auto-refetch to reduce load
+    retry: 2, // Retry twice for external API
     ...options,
   });
 };

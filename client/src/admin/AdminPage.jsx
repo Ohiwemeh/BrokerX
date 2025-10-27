@@ -11,6 +11,7 @@ import {
 } from '../hooks';
 import { adminService, emailService } from '../api/services';
 import NotificationBell from '../components/NotificationBell';
+import LoadingButton from '../components/LoadingButton';
 import { 
   FaUsers, 
   FaSearch, 
@@ -360,12 +361,22 @@ const AdminPage = () => {
                         <p className="text-slate-400 text-xs sm:text-sm">Joined on {new Date(selectedUser.createdAt).toLocaleDateString()}</p>
                     </div>
                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                         <button onClick={handleVerifyUser} className="bg-green-600/80 hover:bg-green-500 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition text-sm flex items-center justify-center gap-2">
+                         <LoadingButton 
+                           onClick={handleVerifyUser} 
+                           isLoading={verifyUserMutation.isPending}
+                           className="bg-green-600/80 hover:bg-green-500 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition text-sm flex items-center justify-center gap-2"
+                           loadingText="Verifying..."
+                         >
                             <FaUserCheck /> <span>Verify</span>
-                         </button>
-                         <button onClick={handleRejectUser} className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition text-sm flex items-center justify-center gap-2">
+                         </LoadingButton>
+                         <LoadingButton 
+                           onClick={handleRejectUser}
+                           isLoading={rejectUserMutation.isPending}
+                           className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-3 sm:px-4 rounded-lg transition text-sm flex items-center justify-center gap-2"
+                           loadingText="Rejecting..."
+                         >
                             <FaUserTimes /> <span>Reject</span>
-                         </button>
+                         </LoadingButton>
                      </div>
                 </div>
             </div>

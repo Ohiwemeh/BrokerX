@@ -73,6 +73,12 @@ const transactionSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Performance indexes
+transactionSchema.index({ userId: 1, createdAt: -1 }); // Compound index for user transactions
+transactionSchema.index({ transactionId: 1 }); // Already unique, but explicit
+transactionSchema.index({ status: 1 }); // For filtering by status
+transactionSchema.index({ type: 1 }); // For filtering by type
+
 const Transaction = mongoose.model('Transaction', transactionSchema);
 
 module.exports = Transaction;

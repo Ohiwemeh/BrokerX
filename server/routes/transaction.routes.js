@@ -217,15 +217,20 @@ router.post('/withdrawal', verifyToken, async (req, res) => {
 });
 
 // @route   GET /api/transactions/dashboard/stats
-// @desc    Get transaction stats for dashboard
+// @desc    Get transaction stats for dashboard (optimized)
 router.get('/dashboard/stats', verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    // Use lean() and select only needed fields for performance
+    const user = await User.findById(req.user._id)
+      .select('balance profit totalDeposit totalWithdrawal accountStatus')
+      .lean();
 
-    // Get recent transactions
+    // Get recent transactions with minimal fields
     const recentTransactions = await Transaction.find({ userId: req.user._id })
+      .select('transactionId type asset description amount currency status createdAt')
       .sort({ createdAt: -1 })
-      .limit(5);
+      .limit(5)
+      .lean();
 
     // Format transactions for dashboard
     const formattedTransactions = recentTransactions.map(tx => ({
@@ -238,10 +243,12 @@ router.get('/dashboard/stats', verifyToken, async (req, res) => {
     }));
 
     res.json({
-      balance: user.balance,
-      profit: user.profit,
-      totalDeposit: user.totalDeposit,
-      totalWithdrawal: user.totalWithdrawal,
+      stats: {
+        balance: user.balance || 0,
+        profit: user.profit || 0,
+        totalDeposit: user.totalDeposit || 0,
+        totalWithdrawal: user.totalWithdrawal || 0,
+      },
       transactions: formattedTransactions,
       accountStatus: user.accountStatus
     });
