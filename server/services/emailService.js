@@ -1,43 +1,36 @@
 // server/services/emailService.js
 
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Create transporter with timeout
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: process.env.EMAIL_PORT || 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000, // 10 seconds
-    socketTimeout: 15000, // 15 seconds
-  });
-};
+// Initialize Resend with API key
+const resend = new Resend(process.env.EMAIL_PASSWORD); // API key from .env
+const EMAIL_FROM = process.env.EMAIL_FROM || 'BrokerX <onboarding@resend.dev>';
 
 class EmailService {
   
   // Send email to user
   static async sendEmail(to, subject, htmlContent, textContent) {
     try {
-      const transporter = createTransporter();
+      // Validate API key
+      if (!process.env.EMAIL_PASSWORD || !process.env.EMAIL_PASSWORD.startsWith('re_')) {
+        throw new Error('Invalid Resend API key. Please check EMAIL_PASSWORD in .env file.');
+      }
 
-      const mailOptions = {
-        from: process.env.EMAIL_FROM || 'pinnacletradefx <noreply@pinnacletradefx.com>',
-        to: to,
+      const { data, error } = await resend.emails.send({
+        from: EMAIL_FROM,
+        to: [to],
         subject: subject,
-        text: textContent,
         html: htmlContent,
-      };
+      });
 
-      const info = await transporter.sendMail(mailOptions);
-      console.log('Email sent:', info.messageId);
-      return { success: true, messageId: info.messageId };
+      if (error) {
+        throw new Error(`Resend error: ${error.message}`);
+      }
+
+      console.log('✅ Email sent via Resend:', data.id);
+      return { success: true, messageId: data.id };
     } catch (error) {
-      console.error('Email sending failed:', error);
+      console.error('❌ Email sending failed:', error.message);
       throw error;
     }
   }
