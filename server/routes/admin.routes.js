@@ -333,10 +333,13 @@ router.put('/transactions/:id/update-status', async (req, res) => {
 
     console.log('👤 User found:', user.name, user.email);
 
-    // If completing a deposit, update user balance
+    // If completing a deposit, update user balance and profit
     if (status === 'Completed' && oldStatus !== 'Completed' && transaction.type === 'Deposit') {
-      user.balance += transaction.amount;
-      user.totalDeposit += transaction.amount;
+      const amount = transaction.amount;
+      user.balance += amount;
+      user.totalDeposit += amount;
+      // Calculate profit - Add 10% of deposit amount to profit
+      user.profit += amount * 0.10;
       await user.save();
 
       // Notify user of deposit approval
@@ -360,10 +363,14 @@ router.put('/transactions/:id/update-status', async (req, res) => {
       }
     }
 
-    // If completing a withdrawal, update user balance
+    // If completing a withdrawal, update user balance and profit
     if (status === 'Completed' && oldStatus !== 'Completed' && transaction.type === 'Withdrawal') {
-      user.balance -= transaction.amount;
-      user.totalWithdrawal += transaction.amount;
+      const amount = transaction.amount;
+      user.balance -= amount;
+      user.totalWithdrawal += amount;
+      // Calculate profit reduction - Reduce profit proportionally
+      const profitReductionRatio = amount / user.balance;
+      user.profit = Math.max(0, user.profit - (user.profit * profitReductionRatio));
       await user.save();
 
       // Notify user of withdrawal approval
