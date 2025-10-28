@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { walletService } from '../api/services';
+import { useProfile } from '../hooks';
+import { formatCurrency } from '../utils/currency';
 import { 
   FaBullhorn, 
   FaTimes, 
@@ -38,7 +40,7 @@ const PromoBanner = ({ onDismiss }) => (
   </div>
 );
 
-const WalletCard = ({ walletId, balance }) => (
+const WalletCard = ({ walletId, balance, currency }) => (
   <div>
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
       <h2 className="text-lg sm:text-xl font-bold text-white">Your wallet</h2>
@@ -51,7 +53,7 @@ const WalletCard = ({ walletId, balance }) => (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 sm:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div className="w-full md:w-auto">
         <p className="text-xs sm:text-sm text-slate-400">Wallet balance</p>
-        <p className="text-2xl sm:text-3xl md:text-4xl font-semibold text-white">${balance.toLocaleString()}</p>
+        <p className="text-2xl sm:text-3xl md:text-4xl font-semibold text-white">{formatCurrency(balance, currency)}</p>
         <p className="text-xs text-slate-500 font-mono mt-1 truncate">{walletId}</p>
       </div>
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
@@ -69,7 +71,7 @@ const WalletCard = ({ walletId, balance }) => (
   </div>
 );
 
-const TradingAccountCard = ({ accountId, status, balance, margin, leverage, isActivated }) => (
+const TradingAccountCard = ({ accountId, status, balance, margin, leverage, isActivated, currency }) => (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 sm:p-6 space-y-4">
         <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
             <div className="w-full lg:w-auto">
@@ -86,11 +88,11 @@ const TradingAccountCard = ({ accountId, status, balance, margin, leverage, isAc
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 text-xs sm:text-sm w-full lg:w-auto">
                 <div>
                     <span className="text-slate-400">Balance:</span>
-                    <span className="text-white font-semibold ml-2">${balance.toLocaleString()}</span>
+                    <span className="text-white font-semibold ml-2">{formatCurrency(balance, currency)}</span>
                 </div>
                  <div>
                     <span className="text-slate-400">Free Margin:</span>
-                    <span className="text-white font-semibold ml-2">${margin.toLocaleString()}</span>
+                    <span className="text-white font-semibold ml-2">{formatCurrency(margin, currency)}</span>
                 </div>
                  <div>
                     <span className="text-slate-400">Leverage:</span>
@@ -125,6 +127,7 @@ const WalletPage = () => {
   const [activeTab, setActiveTab] = useState('real'); // 'real' or 'demo'
   const [walletData, setWalletData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { data: profile, isLoading: profileLoading } = useProfile();
 
   useEffect(() => {
     const fetchWalletData = async () => {
@@ -157,7 +160,8 @@ const WalletPage = () => {
       
       <WalletCard 
         walletId={walletData?.walletId || 'N/A'} 
-        balance={walletData?.balance || 0} 
+        balance={walletData?.balance || 0}
+        currency={profile?.currency || 'USD'} 
       />
 
       <div>
@@ -192,6 +196,7 @@ const WalletPage = () => {
                     balance={walletData?.tradingAccount?.balance || 0}
                     margin={walletData?.tradingAccount?.freeMargin || 0}
                     leverage={walletData?.tradingAccount?.leverage || '1:Unlimited'}
+                    currency={profile?.currency || 'USD'}
                 />
             )}
             {activeTab === 'demo' && (

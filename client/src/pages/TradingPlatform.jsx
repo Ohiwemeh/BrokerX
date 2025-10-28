@@ -22,6 +22,7 @@ import {
 import { getCryptoPrices, formatPrice, formatPercentage } from '../api/cryptoService';
 import { formatCurrency } from '../utils/currency';
 import { useStorageCleanup } from '../hooks/useStorageCleanup';
+import { useProfile } from '../hooks';
 
 // Crypto icon mapping
 const cryptoIcons = {
@@ -39,6 +40,8 @@ const TradingPlatform = () => {
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
+  const { data: profile } = useProfile();
+  const userCurrency = profile?.currency || 'USD';
   
   const [cryptoData, setCryptoData] = useState(null);
   const [selectedCrypto, setSelectedCrypto] = useState(symbol || 'bitcoin');
@@ -524,12 +527,12 @@ const TradingPlatform = () => {
               {/* Available Balance */}
               <div className="bg-slate-700 p-3 rounded-lg">
                 <div className="text-xs text-slate-400 mb-1">Available Balance</div>
-                <div className="text-lg font-bold">$10,000.00</div>
+                <div className="text-lg font-bold">{formatCurrency(10000, userCurrency)}</div>
               </div>
 
               {/* Price Input */}
               <div>
-                <label className="block text-sm font-semibold mb-2">Price (USD)</label>
+                <label className="block text-sm font-semibold mb-2">Price ({userCurrency})</label>
                 <div className="relative">
                   <input
                     type="number"
@@ -539,7 +542,7 @@ const TradingPlatform = () => {
                     className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm">
-                    USD
+                    {userCurrency}
                   </span>
                 </div>
               </div>
@@ -650,12 +653,12 @@ const TradingPlatform = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Price</span>
-                <span className="font-semibold">${formatPrice(orderPrice || currentCrypto?.price)}</span>
+                <span className="font-semibold">{formatCurrency(orderPrice || currentCrypto?.price || 0, userCurrency)}</span>
               </div>
               <div className="flex justify-between pt-3 border-t border-slate-700">
                 <span className="text-slate-400">Total</span>
                 <span className="font-bold text-lg">
-                  ${((orderAmount || 0) * (orderPrice || currentCrypto?.price || 0)).toFixed(2)}
+                  {formatCurrency((orderAmount || 0) * (orderPrice || currentCrypto?.price || 0), userCurrency)}
                 </span>
               </div>
             </div>

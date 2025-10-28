@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { transactionService } from '../api/services';
+import { useProfile } from '../hooks';
+import { formatCurrency } from '../utils/currency';
 import { 
   FaCreditCard, 
   FaUniversity, 
@@ -46,7 +48,8 @@ const DepositPage = () => {
 
   const [selectedMethod, setSelectedMethod] = useState('card');
   const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState('PHP, ₱');
+  const { data: profile } = useProfile();
+  const userCurrency = profile?.currency || 'USD';
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -142,18 +145,18 @@ const DepositPage = () => {
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center">
                   <button className="flex items-center gap-2 px-4 text-white font-semibold">
-                    {currency}
+                    {formatCurrency(0, userCurrency).charAt(0)}
                     <FaAngleDown className="text-slate-400" />
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-slate-500 mt-2">Limits: 5,000 - 10,000,000 {currency}</p>
+              <p className="text-xs text-slate-500 mt-2">Limits: {formatCurrency(5000, userCurrency)} - {formatCurrency(10000000, userCurrency)}</p>
             </div>
             
             <div className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg">
                 <span className="text-slate-400">Will be deposited</span>
                 <span className="font-semibold text-lg text-white">
-                  ₱{!isNaN(amountInUSD) ? amountInUSD : '0.00'} PHP
+                  {formatCurrency(!isNaN(amount) ? parseFloat(amount) : 0, userCurrency)}
                 </span>
             </div>
 

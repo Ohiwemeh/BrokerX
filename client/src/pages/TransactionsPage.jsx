@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { transactionService } from '../api/services';
+import { useProfile } from '../hooks';
+import { formatCurrency } from '../utils/currency';
 import { 
   FaChevronLeft, 
   FaCalendarAlt, 
@@ -88,6 +90,9 @@ const PaginationControls = ({ itemsPerPage, totalItems, currentPage, onPageChang
 // --- Main Transactions Page Component ---
 
 const TransactionsPage = () => {
+  const { data: profile } = useProfile();
+  const userCurrency = profile?.currency || 'USD';
+
   // State for filters
   const [selectedDateRange, setSelectedDateRange] = useState('');
   const [selectedType, setSelectedType] = useState('All');
@@ -214,7 +219,7 @@ const TransactionsPage = () => {
                     <td className="font-mono text-slate-400 px-2">{tx.transactionId}</td>
                     <td className="px-2">{tx.type}</td>
                     <td className="px-2">{tx.method}</td>
-                    <td className="px-2">${tx.amount} {tx.currency}</td>
+                    <td className="px-2">{formatCurrency(tx.amount, userCurrency)}</td>
                     <td className="px-2">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         tx.status === "Completed" ? "bg-green-500/20 text-green-400"

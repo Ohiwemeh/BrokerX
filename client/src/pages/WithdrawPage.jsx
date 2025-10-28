@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useProfile, useCreateWithdrawal } from '../hooks';
 import LoadingButton from '../components/LoadingButton';
+import { formatCurrency } from '../utils/currency';
 import { 
   FaArrowLeft,
   FaWallet,
@@ -35,6 +36,7 @@ const WithdrawPage = () => {
 
   const user = profile || { balance: 0, currency: 'USD' };
   const availableBalance = user.balance || 0;
+  const userCurrency = user.currency || 'USD';
 
   const withdrawalMethods = [
     { id: 'bank', name: 'Bank Transfer', icon: FaUniversity, description: 'Withdraw to your bank account' },
@@ -228,7 +230,7 @@ const WithdrawPage = () => {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">Withdraw Funds</h1>
             <p className="text-slate-400 text-sm">
-              Available Balance: <span className="text-white font-semibold">${availableBalance.toLocaleString()}</span>
+              Available Balance: <span className="text-white font-semibold">{formatCurrency(availableBalance, userCurrency)}</span>
             </p>
           </div>
         </div>
@@ -288,7 +290,7 @@ const WithdrawPage = () => {
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-2">Withdrawal Amount</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">{formatCurrency(0, userCurrency).charAt(0)}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -300,7 +302,7 @@ const WithdrawPage = () => {
                   />
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
-                  Maximum: ${availableBalance.toLocaleString()}
+                  Maximum: {formatCurrency(availableBalance, userCurrency)}
                 </p>
               </div>
 
@@ -356,7 +358,7 @@ const WithdrawPage = () => {
               <div className="bg-slate-900 rounded-lg p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Amount:</span>
-                  <span className="font-semibold">${parseFloat(amount || 0).toLocaleString()}</span>
+                  <span className="font-semibold">{formatCurrency(parseFloat(amount || 0), userCurrency)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Method:</span>
