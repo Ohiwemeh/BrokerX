@@ -106,7 +106,6 @@ const WithdrawPage = () => {
                 value={withdrawalDetails.accountName}
                 onChange={(e) => setWithdrawalDetails({ ...withdrawalDetails, accountName: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="John Doe"
                 required
               />
             </div>
@@ -117,7 +116,7 @@ const WithdrawPage = () => {
                 value={withdrawalDetails.bankName}
                 onChange={(e) => setWithdrawalDetails({ ...withdrawalDetails, bankName: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Bank of America"
+                
                 required
               />
             </div>
@@ -128,11 +127,11 @@ const WithdrawPage = () => {
                 value={withdrawalDetails.accountNumber}
                 onChange={(e) => setWithdrawalDetails({ ...withdrawalDetails, accountNumber: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="1234567890"
+                
                 required
               />
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-slate-400 mb-2">Routing Number</label>
               <input
                 type="text"
@@ -142,7 +141,7 @@ const WithdrawPage = () => {
                 placeholder="021000021"
                 required
               />
-            </div>
+            </div> */}
           </>
         );
       case 'crypto':
@@ -169,7 +168,7 @@ const WithdrawPage = () => {
                 value={withdrawalDetails.accountNumber}
                 onChange={(e) => setWithdrawalDetails({ ...withdrawalDetails, accountNumber: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="1234 5678 9012 3456"
+                
                 required
               />
             </div>
@@ -180,7 +179,7 @@ const WithdrawPage = () => {
                 value={withdrawalDetails.accountName}
                 onChange={(e) => setWithdrawalDetails({ ...withdrawalDetails, accountName: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="John Doe"
+                
                 required
               />
             </div>
@@ -195,7 +194,7 @@ const WithdrawPage = () => {
               value={withdrawalDetails.email}
               onChange={(e) => setWithdrawalDetails({ ...withdrawalDetails, email: e.target.value })}
               className="w-full bg-slate-800 border border-slate-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="your@email.com"
+              
               required
             />
           </div>
@@ -297,7 +296,7 @@ const WithdrawPage = () => {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     className="w-full bg-slate-900 border border-slate-700 text-white py-3 pl-8 pr-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-semibold"
-                    placeholder="0.00"
+                   
                     required
                   />
                 </div>
@@ -348,7 +347,7 @@ const WithdrawPage = () => {
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
                   className="w-full bg-slate-900 border border-slate-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-2xl font-mono tracking-widest"
-                  placeholder="XXXXXX"
+                 
                   maxLength="8"
                   required
                 />
