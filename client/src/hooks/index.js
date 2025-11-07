@@ -32,6 +32,7 @@ export {
   useVerifyUser,
   useRejectUser,
   useAddFunds,
+  useAddProfit,
   useSendEmail,
   useDeleteUser,
   useUpdateTransactionStatus,

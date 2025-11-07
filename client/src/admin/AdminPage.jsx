@@ -6,6 +6,7 @@ import {
   useVerifyUser, 
   useRejectUser, 
   useAddFunds, 
+  useAddProfit, 
   useSendEmail, 
   useDeleteUser 
 } from '../hooks';
@@ -217,6 +218,40 @@ const AdminPage = () => {
                           <input name="description" type="text" placeholder="Bonus, deposit, etc." className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                       </div>
                       <button type="submit" className="w-full bg-blue-600 font-bold py-2 rounded-lg hover:bg-blue-700 transition">Confirm Deposit</button>
+                  </form>
+              );
+              break;
+          case 'addProfit':
+              title = `Add Profit to ${selectedUser.name}`;
+              content = (
+                  <form className="space-y-4" onSubmit={async (e) => {
+                      e.preventDefault();
+                      const amount = e.target.amount.value;
+                      const description = e.target.description.value;
+                      try {
+                          await adminService.addProfit(selectedUserId, parseFloat(amount), description);
+                          alert('Profit added successfully!');
+                          setIsModalOpen(false);
+                          refetchUsers();
+                          setSelectedUserId(null);
+                      } catch (err) {
+                          alert(err.response?.data?.message || 'Failed to add profit');
+                      }
+                  }}>
+                      <div className="mb-3 p-3 bg-green-500/10 border border-green-400/30 rounded-lg">
+                          <p className="text-sm text-green-300">
+                              💰 This will add profit directly without creating a transaction notification.
+                          </p>
+                      </div>
+                      <div>
+                          <label className="block text-sm font-medium text-slate-400 mb-2">Amount (USD)</label>
+                          <input name="amount" type="number" placeholder="0.00" required className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"/>
+                      </div>
+                      <div>
+                          <label className="block text-sm font-medium text-slate-400 mb-2">Description (Optional)</label>
+                          <input name="description" type="text" placeholder="Trading profit, bonus, etc." className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"/>
+                      </div>
+                      <button type="submit" className="w-full bg-green-600 font-bold py-2 rounded-lg hover:bg-green-700 transition">Confirm Profit Addition</button>
                   </form>
               );
               break;
@@ -452,6 +487,18 @@ const AdminPage = () => {
                     >
                       <FaPlus/>
                       <span>Add Funds</span>
+                    </button>
+                    <button 
+                      onClick={() => selectedUser.accountStatus === 'Verified' ? openModal('addProfit') : alert('User must be verified before adding profit')}
+                      disabled={selectedUser.accountStatus !== 'Verified'}
+                      className={`flex items-center justify-center gap-2 w-full text-sm font-semibold py-2 px-4 rounded-lg transition ${
+                        selectedUser.accountStatus === 'Verified' 
+                          ? 'bg-green-600 hover:bg-green-500' 
+                          : 'bg-slate-600 opacity-50 cursor-not-allowed'
+                      }`}
+                    >
+                      <FaExchangeAlt/>
+                      <span>Add Profit</span>
                     </button>
                     <ActionButton icon={<FaEnvelope/>} label="Send Email" onClick={() => openModal('sendEmail')}/>
                     <ActionButton icon={<FaKey/>} label="Withdrawal Code" onClick={handleGenerateWithdrawalCode} className="bg-purple-600 hover:bg-purple-500"/>

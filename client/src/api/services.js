@@ -193,6 +193,14 @@ export const adminService = {
     return response.data;
   },
 
+  addProfit: async (id, amount, description) => {
+    const response = await api.post(`/admin/users/${id}/add-profit`, {
+      amount,
+      description,
+    });
+    return response.data;
+  },
+
   sendEmail: async (id, subject, message) => {
     const response = await api.post(`/admin/users/${id}/send-email`, {
       subject,

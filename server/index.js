@@ -14,8 +14,9 @@ const server = http.createServer(app);
 // Configure allowed origins for CORS
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://localhost:3000',
-  'https.broker-x-sand.vercel.app',
+  'https://broker-x-sand.vercel.app',
   process.env.CLIENT_URL
 ].filter(Boolean);
 

@@ -106,6 +106,22 @@ export const useAddFunds = () => {
 };
 
 /**
+ * Hook to add profit to a user's account (admin only)
+ */
+export const useAddProfit = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, amount, description }) => 
+      adminService.addProfit(userId, amount, description),
+    onSuccess: (data, { userId }) => {
+      // Only invalidate specific user data
+      queryClient.invalidateQueries({ queryKey: ['adminUser', userId], exact: true });
+    },
+  });
+};
+
+/**
  * Hook to send email to a user (admin only)
  */
 export const useSendEmail = () => {

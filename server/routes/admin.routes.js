@@ -213,6 +213,45 @@ router.post('/users/:id/add-funds', async (req, res) => {
   }
 });
 
+// @route   POST /api/admin/users/:id/add-profit
+// @desc    Add profit to user account (admin only) - No transaction notification
+router.post('/users/:id/add-profit', async (req, res) => {
+  try {
+    const { amount, description } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: 'Invalid amount' });
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if user is verified
+    if (user.accountStatus !== 'Verified') {
+      return res.status(400).json({ message: 'User must be verified before adding profit' });
+    }
+
+    // Update user profit only (not balance or totalDeposit)
+    user.profit += parseFloat(amount);
+    await user.save();
+
+    // Note: No transaction record is created and no notification is sent
+    // This is a silent profit addition for admin purposes
+
+    res.json({
+      message: 'Profit added successfully',
+      user: await User.findById(user._id).select('-password')
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/admin/users/:id/send-email
 // @desc    Send email to user (admin only)
 router.post('/users/:id/send-email', async (req, res) => {
