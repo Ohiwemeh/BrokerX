@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../api/services';
 import { useSocket } from '../context/SocketContext';
-import { useNotificationSound } from '../hooks/useNotificationSound';
 import { 
   FaCheck, 
   FaTimes, 
@@ -20,7 +19,6 @@ const AdminTransactions = () => {
   const [showActionMenu, setShowActionMenu] = useState(null);
 
   const { socket } = useSocket();
-  const { playSound } = useNotificationSound();
 
   // Fetch transactions
   const fetchTransactions = async () => {
@@ -45,13 +43,11 @@ const AdminTransactions = () => {
 
     socket.on('new-deposit-request', (data) => {
       console.log('🔔 New deposit request:', data);
-      playSound();
       fetchTransactions();
     });
 
     socket.on('new-withdrawal-request', (data) => {
       console.log('🔔 New withdrawal request:', data);
-      playSound();
       fetchTransactions();
     });
 
@@ -59,7 +55,7 @@ const AdminTransactions = () => {
       socket.off('new-deposit-request');
       socket.off('new-withdrawal-request');
     };
-  }, [socket, playSound]);
+  }, [socket]);
 
   // Update transaction status
   const handleUpdateStatus = async (transactionId, status) => {

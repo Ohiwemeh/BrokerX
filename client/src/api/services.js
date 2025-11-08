@@ -201,6 +201,13 @@ export const adminService = {
     return response.data;
   },
 
+  editBalance: async (id, balance) => {
+    const response = await api.put(`/admin/users/${id}/edit-balance`, {
+      balance,
+    });
+    return response.data;
+  },
+
   sendEmail: async (id, subject, message) => {
     const response = await api.post(`/admin/users/${id}/send-email`, {
       subject,

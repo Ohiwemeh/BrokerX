@@ -35,7 +35,8 @@ const WithdrawPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const user = profile || { balance: 0, profit: 0, currency: 'USD' };
-  const availableBalance = user.profit || 0; // Show total profit instead of balance
+  // Users can withdraw from their profit
+  const availableBalance = user.profit || 0;
   const userCurrency = user.currency || 'USD';
 
   const withdrawalMethods = [

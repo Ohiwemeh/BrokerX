@@ -4,7 +4,6 @@ const router = require('express').Router();
 const Transaction = require('../models/transaction.model');
 const User = require('../models/user.model');
 const { verifyToken } = require('../middleware/auth.middleware');
-const NotificationService = require('../services/notificationService');
 
 // @route   GET /api/transactions
 // @desc    Get user transactions with filters
@@ -103,9 +102,8 @@ router.post('/deposit', verifyToken, async (req, res) => {
 
     await transaction.save();
 
-    // Notify admins of new deposit request
+    // Get user for socket notification
     const user = await User.findById(req.user._id);
-    await NotificationService.notifyDepositRequest(user, amount, transactionId);
 
     // Emit real-time notification to admins
     const io = req.app.get('io');
@@ -148,9 +146,9 @@ router.post('/withdrawal', verifyToken, async (req, res) => {
 
     const user = await User.findById(req.user._id);
 
-    // Check if user has sufficient balance
-    if (user.balance < amount) {
-      return res.status(400).json({ message: 'Insufficient balance' });
+    // Check if user has sufficient profit to withdraw
+    if (user.profit < amount) {
+      return res.status(400).json({ message: 'Insufficient profit to withdraw' });
     }
 
     // Verify withdrawal code
@@ -188,8 +186,7 @@ router.post('/withdrawal', verifyToken, async (req, res) => {
     user.withdrawalCodeExpiry = null;
     await user.save();
 
-    // Notify admins of new withdrawal request
-    await NotificationService.notifyWithdrawalRequest(user, amount, transactionId);
+    // Notification system removed for performance
 
     // Emit real-time notification to admins
     const io = req.app.get('io');

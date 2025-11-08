@@ -7,13 +7,14 @@ import { adminService } from '../api/services';
  * @param {Object} pagination - Pagination parameters (page, limit)
  * @param {Object} options - Query options
  */
-export const useAdminUsers = (filters = {}, pagination = { page: 1, limit: 20 }, options = {}) => {
+export const useAdminUsers = (filters = {}, pagination = { page: 1, limit: 10 }, options = {}) => {
   return useQuery({
     queryKey: ['adminUsers', filters, pagination],
     queryFn: () => adminService.getUsers({ ...filters, ...pagination }),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 2, // 2 minutes (faster updates for admin)
     gcTime: 1000 * 60 * 10, // 10 minutes cache
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnMount: false, // Don't refetch on component mount if data exists
     ...options,
   });
 };
@@ -70,8 +71,10 @@ export const useVerifyUser = () => {
   return useMutation({
     mutationFn: (userId) => adminService.verifyUser(userId),
     onSuccess: (data, userId) => {
-      // Only invalidate specific user, not entire list
+      // Invalidate admin-specific user data
       queryClient.invalidateQueries({ queryKey: ['adminUser', userId], exact: true });
+      // Invalidate user's own profile so their dashboard updates
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 };
@@ -85,8 +88,10 @@ export const useRejectUser = () => {
   return useMutation({
     mutationFn: ({ userId, reason }) => adminService.rejectUser(userId, reason),
     onSuccess: (data, { userId }) => {
-      // Only invalidate specific user
+      // Invalidate admin-specific user data
       queryClient.invalidateQueries({ queryKey: ['adminUser', userId], exact: true });
+      // Invalidate user's own profile so their dashboard updates
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 };
@@ -101,8 +106,12 @@ export const useAddFunds = () => {
     mutationFn: ({ userId, amount, description }) => 
       adminService.addFunds(userId, amount, description),
     onSuccess: (data, { userId }) => {
-      // Only invalidate specific user data
+      // Invalidate admin-specific user data
       queryClient.invalidateQueries({ queryKey: ['adminUser', userId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      // Invalidate user's own profile and stats so their dashboard updates
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
     },
   });
 };
@@ -117,8 +126,32 @@ export const useAddProfit = () => {
     mutationFn: ({ userId, amount, description }) => 
       adminService.addProfit(userId, amount, description),
     onSuccess: (data, { userId }) => {
-      // Only invalidate specific user data
+      // Invalidate admin-specific user data
       queryClient.invalidateQueries({ queryKey: ['adminUser', userId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      // Invalidate user's own profile and stats so their dashboard updates
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+    },
+  });
+};
+
+/**
+ * Hook to edit user balance directly (admin only)
+ */
+export const useEditBalance = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, balance }) => 
+      adminService.editBalance(userId, balance),
+    onSuccess: (data, { userId }) => {
+      // Invalidate admin-specific user data
+      queryClient.invalidateQueries({ queryKey: ['adminUser', userId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      // Invalidate user's own profile and stats so their dashboard updates
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
     },
   });
 };
@@ -159,8 +192,15 @@ export const useUpdateTransactionStatus = () => {
     mutationFn: ({ transactionId, status }) => 
       adminService.updateTransactionStatus(transactionId, status),
     onSuccess: (data, { transactionId }) => {
-      // Only invalidate specific transaction
+      // Invalidate specific transaction
       queryClient.invalidateQueries({ queryKey: ['transaction', transactionId], exact: true });
+      // Invalidate user's transaction list and stats so their dashboard updates
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      // Invalidate admin user queries to refresh user details in admin panel
+      queryClient.invalidateQueries({ queryKey: ['adminUser'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
     },
   });
 };

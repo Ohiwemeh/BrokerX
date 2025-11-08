@@ -4,7 +4,6 @@ const router = require('express').Router();
 const User = require('../models/user.model');
 const Transaction = require('../models/transaction.model');
 const { verifyToken, isAdmin } = require('../middleware/auth.middleware');
-const NotificationService = require('../services/notificationService');
 const EmailService = require('../services/emailService');
 
 // Apply authentication and admin check to all routes
@@ -15,7 +14,7 @@ router.use(isAdmin);
 // @desc    Get all users (admin only)
 router.get('/users', async (req, res) => {
   try {
-    const { search, status, page = 1, limit = 20 } = req.query;
+    const { search, status, page = 1, limit = 10 } = req.query;
 
     // Build query
     const query = {};
@@ -36,7 +35,7 @@ router.get('/users', async (req, res) => {
 
     // Use lean() for better performance (returns plain JS objects)
     const users = await User.find(query)
-      .select('name email accountStatus balance createdAt')
+      .select('name email accountStatus balance profit createdAt')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
@@ -61,19 +60,21 @@ router.get('/users', async (req, res) => {
 });
 
 // @route   GET /api/admin/users/:id
-// @desc    Get single user details (admin only)
+// @desc    Get single user details (admin only) - OPTIMIZED
 router.get('/users/:id', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
+    // Run both queries in parallel for faster response
+    const [user, transactions] = await Promise.all([
+      User.findById(req.params.id).select('-password').lean(),
+      Transaction.find({ userId: req.params.id })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean()
+    ]);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
-    // Get user transactions
-    const transactions = await Transaction.find({ userId: user._id })
-      .sort({ createdAt: -1 })
-      .limit(10);
 
     res.json({
       user,
@@ -99,9 +100,6 @@ router.put('/users/:id/verify', async (req, res) => {
     user.accountStatus = 'Verified';
     user.isTradingAccountActivated = true;
     await user.save();
-
-    // Send notification to user
-    await NotificationService.notifyUserVerified(user);
 
     // Send verification email
     try {
@@ -137,9 +135,6 @@ router.put('/users/:id/reject', async (req, res) => {
     await user.save();
 
     const rejectionReason = reason || 'Please contact support for more information.';
-
-    // Send notification to user with reason
-    await NotificationService.notifyUserRejected(user, rejectionReason);
 
     // Send rejection email
     try {
@@ -252,6 +247,42 @@ router.post('/users/:id/add-profit', async (req, res) => {
   }
 });
 
+// @route   PUT /api/admin/users/:id/edit-balance
+// @desc    Edit user balance directly (admin only)
+router.put('/users/:id/edit-balance', async (req, res) => {
+  try {
+    const { balance } = req.body;
+
+    if (balance === undefined || balance < 0) {
+      return res.status(400).json({ message: 'Invalid balance amount' });
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if user is verified
+    if (user.accountStatus !== 'Verified') {
+      return res.status(400).json({ message: 'User must be verified before editing balance' });
+    }
+
+    // Update user balance directly
+    user.balance = parseFloat(balance);
+    await user.save();
+
+    res.json({
+      message: 'Balance updated successfully',
+      user: await User.findById(user._id).select('-password')
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/admin/users/:id/send-email
 // @desc    Send email to user (admin only)
 router.post('/users/:id/send-email', async (req, res) => {
@@ -308,7 +339,7 @@ router.delete('/users/:id', async (req, res) => {
 });
 
 // @route   GET /api/admin/transactions
-// @desc    Get all transactions (admin only)
+// @desc    Get all transactions (admin only) - OPTIMIZED
 router.get('/transactions', async (req, res) => {
   try {
     const { status, type, page = 1, limit = 20 } = req.query;
@@ -321,19 +352,55 @@ router.get('/transactions', async (req, res) => {
       query.type = type;
     }
 
-    const transactions = await Transaction.find(query)
-      .populate('userId', 'name email')
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit));
-
-    const total = await Transaction.countDocuments(query);
+    // Use aggregation pipeline for better performance with populate
+    const [transactions, totalResult] = await Promise.all([
+      Transaction.aggregate([
+        { $match: query },
+        { $sort: { createdAt: -1 } },
+        { $skip: (parseInt(page) - 1) * parseInt(limit) },
+        { $limit: parseInt(limit) },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'userId',
+            foreignField: '_id',
+            as: 'user'
+          }
+        },
+        {
+          $unwind: {
+            path: '$user',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            transactionId: 1,
+            type: 1,
+            method: 1,
+            amount: 1,
+            currency: 1,
+            status: 1,
+            description: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            'userId': { 
+              _id: '$user._id',
+              name: '$user.name',
+              email: '$user.email'
+            }
+          }
+        }
+      ]),
+      Transaction.countDocuments(query)
+    ]);
 
     res.json({
       transactions,
-      total,
+      total: totalResult,
       page: parseInt(page),
-      pages: Math.ceil(total / parseInt(limit))
+      pages: Math.ceil(totalResult / parseInt(limit))
     });
 
   } catch (error) {
@@ -381,9 +448,6 @@ router.put('/transactions/:id/update-status', async (req, res) => {
       user.profit += amount * 0.10;
       await user.save();
 
-      // Notify user of deposit approval
-      await NotificationService.notifyDepositApproved(user, transaction.amount, transaction.transactionId);
-
       // Send email notification
       try {
         await EmailService.sendDepositApprovedEmail(user, transaction.amount);
@@ -412,9 +476,6 @@ router.put('/transactions/:id/update-status', async (req, res) => {
       user.profit = Math.max(0, user.profit - (user.profit * profitReductionRatio));
       await user.save();
 
-      // Notify user of withdrawal approval
-      await NotificationService.notifyWithdrawalApproved(user, transaction.amount, transaction.transactionId);
-
       // Emit real-time notification to user
       const io = req.app.get('io');
       if (io) {
@@ -428,8 +489,6 @@ router.put('/transactions/:id/update-status', async (req, res) => {
 
     // If rejecting a transaction
     if (status === 'Failed' && oldStatus !== 'Failed') {
-      // Notify user of rejection
-      await NotificationService.notifyTransactionRejected(user, transaction.type, transaction.amount, transaction.transactionId);
 
       // Emit real-time notification to user
       const io = req.app.get('io');
@@ -499,40 +558,79 @@ router.post('/users/:id/generate-withdrawal-code', async (req, res) => {
 });
 
 // @route   GET /api/admin/stats
-// @desc    Get admin dashboard stats
+// @desc    Get admin dashboard stats (OPTIMIZED)
 router.get('/stats', async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const verifiedUsers = await User.countDocuments({ accountStatus: 'Verified' });
-    const pendingUsers = await User.countDocuments({ accountStatus: 'Pending' });
-    
-    const totalTransactions = await Transaction.countDocuments();
-    const pendingTransactions = await Transaction.countDocuments({ status: 'Pending' });
-
-    // Calculate total deposits and withdrawals
-    const deposits = await Transaction.aggregate([
-      { $match: { type: 'Deposit', status: 'Completed' } },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
+    // Run all queries in parallel for faster response
+    const [userStats, transactionStats, financials] = await Promise.all([
+      // User stats aggregation (1 query instead of 3)
+      User.aggregate([
+        {
+          $group: {
+            _id: '$accountStatus',
+            count: { $sum: 1 }
+          }
+        }
+      ]),
+      
+      // Transaction stats aggregation (1 query instead of 2)
+      Transaction.aggregate([
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        }
+      ]),
+      
+      // Financial stats aggregation (1 query instead of 2)
+      Transaction.aggregate([
+        {
+          $match: {
+            status: 'Completed',
+            type: { $in: ['Deposit', 'Withdrawal'] }
+          }
+        },
+        {
+          $group: {
+            _id: '$type',
+            total: { $sum: '$amount' }
+          }
+        }
+      ])
     ]);
 
-    const withdrawals = await Transaction.aggregate([
-      { $match: { type: 'Withdrawal', status: 'Completed' } },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
+    // Parse user stats
+    const userStatsMap = userStats.reduce((acc, stat) => {
+      acc[stat._id] = stat.count;
+      return acc;
+    }, {});
+
+    // Parse transaction stats
+    const transactionStatsMap = transactionStats.reduce((acc, stat) => {
+      acc[stat._id] = stat.count;
+      return acc;
+    }, {});
+
+    // Parse financial stats
+    const financialMap = financials.reduce((acc, stat) => {
+      acc[stat._id] = stat.total;
+      return acc;
+    }, {});
 
     res.json({
       users: {
-        total: totalUsers,
-        verified: verifiedUsers,
-        pending: pendingUsers
+        total: Object.values(userStatsMap).reduce((a, b) => a + b, 0),
+        verified: userStatsMap['Verified'] || 0,
+        pending: userStatsMap['Pending'] || 0
       },
       transactions: {
-        total: totalTransactions,
-        pending: pendingTransactions
+        total: Object.values(transactionStatsMap).reduce((a, b) => a + b, 0),
+        pending: transactionStatsMap['Pending'] || 0
       },
       financials: {
-        totalDeposits: deposits[0]?.total || 0,
-        totalWithdrawals: withdrawals[0]?.total || 0
+        totalDeposits: financialMap['Deposit'] || 0,
+        totalWithdrawals: financialMap['Withdrawal'] || 0
       }
     });
 

@@ -145,6 +145,8 @@ userSchema.index({ email: 1 }); // Already unique, but explicit
 userSchema.index({ accountStatus: 1 }); // For filtering by status
 userSchema.index({ createdAt: -1 }); // For sorting by creation date
 userSchema.index({ name: 'text', email: 'text' }); // For text search
+userSchema.index({ role: 1, accountStatus: 1 }); // Compound index for admin queries
+userSchema.index({ accountStatus: 1, createdAt: -1 }); // For admin list with sorting
 
 const User = mongoose.model('User', userSchema);
 

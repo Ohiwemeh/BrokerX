@@ -33,6 +33,7 @@ export {
   useRejectUser,
   useAddFunds,
   useAddProfit,
+  useEditBalance,
   useSendEmail,
   useDeleteUser,
   useUpdateTransactionStatus,
@@ -42,5 +43,4 @@ export {
 export { useCryptoPrices } from './useCrypto';
 
 // Existing hooks
-export { useNotificationSound } from './useNotificationSound';
 export { useStorageCleanup } from './useStorageCleanup';

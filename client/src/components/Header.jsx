@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router';
 import { FaUserShield } from 'react-icons/fa';
-import NotificationBell from './NotificationBell';
 import { authService } from '../api/services';
 
 const Header = () => {
@@ -38,8 +37,6 @@ const Header = () => {
               <span>← Back to Dashboard</span>
             </Link>
           )}
-          
-          <NotificationBell />
         </div>
       </div>
     </header>

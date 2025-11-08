@@ -78,6 +78,8 @@ transactionSchema.index({ userId: 1, createdAt: -1 }); // Compound index for use
 transactionSchema.index({ transactionId: 1 }); // Already unique, but explicit
 transactionSchema.index({ status: 1 }); // For filtering by status
 transactionSchema.index({ type: 1 }); // For filtering by type
+transactionSchema.index({ status: 1, type: 1, createdAt: -1 }); // Compound index for admin queries with sorting
+transactionSchema.index({ type: 1, status: 1 }); // For financial aggregations
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
 

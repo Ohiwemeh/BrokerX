@@ -7,11 +7,11 @@ import {
   useRejectUser, 
   useAddFunds, 
   useAddProfit, 
+  useEditBalance,
   useSendEmail, 
   useDeleteUser 
 } from '../hooks';
 import { adminService, emailService } from '../api/services';
-import NotificationBell from '../components/NotificationBell';
 import LoadingButton from '../components/LoadingButton';
 import { 
   FaUsers, 
@@ -29,7 +29,8 @@ import {
   FaCertificate,
   FaExclamationCircle,
   FaTimesCircle,
-  FaExchangeAlt
+  FaExchangeAlt,
+  FaEdit
 } from 'react-icons/fa';
 
 // --- Reusable Sub-Components ---
@@ -106,17 +107,18 @@ const AdminPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 10 });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState(null);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
       setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 on search
-    }, 500);
+    }, 300); // Reduced from 500ms to 300ms for faster response
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
@@ -129,6 +131,7 @@ const AdminPage = () => {
   
   const verifyUserMutation = useVerifyUser();
   const rejectUserMutation = useRejectUser();
+  const editBalanceMutation = useEditBalance();
   const deleteUserMutation = useDeleteUser();
 
   const users = usersData?.users || [];
@@ -172,7 +175,8 @@ const AdminPage = () => {
   };
 
   const handleGenerateWithdrawalCode = async () => {
-    if (!selectedUserId) return;
+    if (!selectedUserId || isGeneratingCode) return;
+    setIsGeneratingCode(true);
     try {
       const response = await adminService.generateWithdrawalCode(selectedUserId);
       const code = response.code;
@@ -193,6 +197,8 @@ const AdminPage = () => {
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to generate withdrawal code');
+    } finally {
+      setIsGeneratingCode(false);
     }
   };
 
@@ -281,6 +287,51 @@ const AdminPage = () => {
                   </form>
               );
               break;
+          case 'editBalance':
+              title = `Edit Balance for ${selectedUser.name}`;
+              content = (
+                  <form className="space-y-4" onSubmit={async (e) => {
+                      e.preventDefault();
+                      const balance = e.target.balance.value;
+                      const submitButton = e.target.querySelector('button[type="submit"]');
+                      
+                      try {
+                          submitButton.disabled = true;
+                          submitButton.textContent = 'Updating Balance...';
+                          
+                          await editBalanceMutation.mutateAsync({ userId: selectedUserId, balance: parseFloat(balance) });
+                          alert('Balance updated successfully!');
+                          setIsModalOpen(false);
+                          refetchUsers();
+                          setSelectedUserId(null);
+                      } catch (err) {
+                          console.error('Edit balance error:', err);
+                          alert(err.response?.data?.message || 'Failed to update balance');
+                          submitButton.disabled = false;
+                          submitButton.textContent = 'Update Balance';
+                      }
+                  }}>
+                      <div className="mb-3 p-3 bg-blue-500/10 border border-blue-400/30 rounded-lg">
+                          <p className="text-sm text-blue-300">
+                              💰 Current Balance: ${selectedUser.balance?.toLocaleString() || 0}
+                          </p>
+                      </div>
+                      <div>
+                          <label className="block text-sm font-medium text-slate-400 mb-2">New Balance (USD)</label>
+                          <input 
+                              name="balance" 
+                              type="number" 
+                              step="0.01" 
+                              placeholder="0.00" 
+                              defaultValue={selectedUser.balance || 0}
+                              required 
+                              className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                      </div>
+                      <button type="submit" className="w-full bg-blue-600 font-bold py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Update Balance</button>
+                  </form>
+              );
+              break;
           case 'sendEmail':
               title = `Send Email to ${selectedUser.name}`;
                content = (
@@ -334,12 +385,9 @@ const AdminPage = () => {
       {/* Left Panel: User List */}
       <aside className="w-full md:w-1/3 md:max-w-sm h-1/3 md:h-full flex flex-col border-b md:border-b-0 md:border-r border-slate-800">
         <div className="p-3 sm:p-4 border-b border-slate-800">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-blue-500">Admin Panel</h1>
-              <p className="text-xs sm:text-sm text-slate-400">pinnacle<br/>tradefx User Management</p>
-            </div>
-            <NotificationBell />
+          <div className="mb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-blue-500">Admin Panel</h1>
+            <p className="text-xs sm:text-sm text-slate-400">pinnacle<br/>tradefx User Management</p>
           </div>
           {/* Transactions Button */}
           <Link
@@ -472,7 +520,8 @@ const AdminPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <InfoField label="Email Address" value={selectedUser.email} />
                 <InfoField label="Date of Birth" value={selectedUser.dob ? new Date(selectedUser.dob).toLocaleDateString() : 'N/A'} />
-                <InfoField label="Wallet Balance" value={`$${selectedUser.balance?.toLocaleString() || 0}`} />
+                <InfoField label="Total Balance" value={`$${selectedUser.balance?.toLocaleString() || 0}`} />
+                <InfoField label="Withdrawable Profit" value={`$${selectedUser.profit?.toLocaleString() || 0}`} />
                 <InfoField label="Address" value={selectedUser.address || 'N/A'} />
                 <InfoField label="City" value={selectedUser.city || 'N/A'} />
                 <InfoField label="Zip Code" value={selectedUser.zipCode || 'N/A'} />
@@ -527,7 +576,7 @@ const AdminPage = () => {
                     ⚠️ User must be verified before you can add funds
                   </div>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                     <button 
                       onClick={() => selectedUser.accountStatus === 'Verified' ? openModal('addFunds') : alert('User must be verified before adding funds')}
                       disabled={selectedUser.accountStatus !== 'Verified'}
@@ -552,8 +601,27 @@ const AdminPage = () => {
                       <FaExchangeAlt/>
                       <span>Add Profit</span>
                     </button>
+                    <button 
+                      onClick={() => selectedUser.accountStatus === 'Verified' ? openModal('editBalance') : alert('User must be verified before editing balance')}
+                      disabled={selectedUser.accountStatus !== 'Verified'}
+                      className={`flex items-center justify-center gap-2 w-full text-sm font-semibold py-2 px-4 rounded-lg transition ${
+                        selectedUser.accountStatus === 'Verified' 
+                          ? 'bg-indigo-600 hover:bg-indigo-500' 
+                          : 'bg-slate-600 opacity-50 cursor-not-allowed'
+                      }`}
+                    >
+                      <FaEdit/>
+                      <span>Edit Balance</span>
+                    </button>
                     <ActionButton icon={<FaEnvelope/>} label="Send Email" onClick={() => openModal('sendEmail')}/>
-                    <ActionButton icon={<FaKey/>} label="Withdrawal Code" onClick={handleGenerateWithdrawalCode} className="bg-purple-600 hover:bg-purple-500"/>
+                    <LoadingButton 
+                      onClick={handleGenerateWithdrawalCode}
+                      isLoading={isGeneratingCode}
+                      className="bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2 px-4 rounded-lg transition text-sm flex items-center justify-center gap-2 w-full"
+                      loadingText="Generating..."
+                    >
+                      <FaKey /> <span>Withdrawal Code</span>
+                    </LoadingButton>
                     <ActionButton icon={<FaTrash/>} label="Delete User" onClick={handleDeleteUser} className="bg-red-600/80 hover:bg-red-500"/>
                 </div>
             </div>

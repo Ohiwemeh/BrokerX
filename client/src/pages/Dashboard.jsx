@@ -44,12 +44,12 @@ const formatCurrency = (amount, currency = 'USD') => {
 };
 
 // Format transaction for display
-const formatTransaction = (tx) => ({
+const formatTransaction = (tx, currency = 'USD') => ({
   date: new Date(tx.createdAt).toLocaleDateString(),
   id: tx._id,
   type: tx.type.charAt(0).toUpperCase() + tx.type.slice(1),
   name: tx.method || tx.type,
-  value: `$${tx.amount.toLocaleString()}`,
+  value: formatCurrency(tx.amount, currency),
   status: tx.status.charAt(0).toUpperCase() + tx.status.slice(1)
 });
 
@@ -159,10 +159,11 @@ const Dashboard = () => {
   const { data: cryptoPrices, isLoading: cryptoLoading, dataUpdatedAt, refetch } = useCryptoPrices();
 
   // Extract data with fallbacks
-  const user = profile || { name: 'User', firstName: 'User', email: '', accountStatus: 'Pending', balance: 0 };
+  const user = profile || { name: 'User', firstName: 'User', email: '', accountStatus: 'Pending', balance: 0, currency: 'USD' };
   const displayName = user.firstName || user.name?.split(' ')[0] || 'User';
+  const userCurrency = user.currency || 'USD';
   const stats = dashboardStats?.stats || { totalDeposit: 0, profit: 0, totalWithdrawal: 0 };
-  const transactions = transactionsData?.transactions?.slice(0, 3).map(formatTransaction) || [];
+  const transactions = transactionsData?.transactions?.slice(0, 3).map(tx => formatTransaction(tx, userCurrency)) || [];
 
   // Manual refresh function
   const handleRefresh = () => {

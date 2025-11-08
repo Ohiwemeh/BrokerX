@@ -160,7 +160,7 @@ const WalletPage = () => {
       
       <WalletCard 
         walletId={walletData?.walletId || 'N/A'} 
-        balance={walletData?.balance || 0}
+        balance={profile?.profit || 0}
         currency={profile?.currency || 'USD'} 
       />
 

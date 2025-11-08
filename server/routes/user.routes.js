@@ -4,7 +4,6 @@ const router = require('express').Router();
 const User = require('../models/user.model'); // Import the User model
 const bcrypt = require('bcryptjs'); // Import bcrypt for password hashing
 const jwt = require('jsonwebtoken'); // Import jsonwebtoken for token generation
-const NotificationService = require('../services/notificationService');
 
 // @route   POST /api/users/signup
 // @desc    Register a new user
@@ -69,14 +68,7 @@ router.post('/signup', async (req, res) => {
       }
     });
     
-    // 9. Send notifications AFTER sending the response
-    // (This is the non-blocking fix I mentioned earlier)
-    try {
-      // NOTE: No 'await' here
-      NotificationService.notifyUserRegistered(savedUser); 
-    } catch (notifError) {
-      console.error('Failed to create admin notifications:', notifError.message);
-    }
+    // Notification system removed for performance
 
     // 10. Emit real-time notification to admin via Socket.IO
     const io = req.app.get('io');
@@ -115,8 +107,10 @@ router.post('/login', async (req, res) => {
     console.log(`[LOGIN] Attempting for user: ${email}`);
     console.time('LOGIN_findUser');
     
-    // 2. Check if user exists
-    const user = await User.findOne({ email });
+    // 2. Check if user exists - optimized with lean() and field selection
+    const user = await User.findOne({ email })
+      .select('_id name email password role accountStatus isProfileComplete')
+      .lean();
     
     console.timeEnd('LOGIN_findUser'); // <-- This will print the time
     // **********************************
