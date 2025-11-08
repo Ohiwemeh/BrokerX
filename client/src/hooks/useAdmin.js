@@ -2,16 +2,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '../api/services';
 
 /**
- * Hook to fetch all users (admin only)
+ * Hook to fetch all users (admin only) with pagination
  * @param {Object} filters - Filter parameters (search, status, etc.)
+ * @param {Object} pagination - Pagination parameters (page, limit)
  * @param {Object} options - Query options
  */
-export const useAdminUsers = (filters = {}, options = {}) => {
+export const useAdminUsers = (filters = {}, pagination = { page: 1, limit: 20 }, options = {}) => {
   return useQuery({
-    queryKey: ['adminUsers', filters],
-    queryFn: () => adminService.getUsers(filters),
-    staleTime: 1000 * 60 * 10, // 10 minutes - reduce refetching
-    gcTime: 1000 * 60 * 20, // 20 minutes cache
+    queryKey: ['adminUsers', filters, pagination],
+    queryFn: () => adminService.getUsers({ ...filters, ...pagination }),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes cache
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
     ...options,
   });
 };

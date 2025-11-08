@@ -20,8 +20,14 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await authService.login(formData.email, formData.password);
-      navigate("/dashboard");
+      const response = await authService.login(formData.email, formData.password);
+      
+      // Check if user is admin and redirect accordingly
+      if (response.user && response.user.role === 'admin') {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       // Better error messages
       if (err.code === 'ECONNABORTED') {

@@ -104,13 +104,27 @@ const Modal = ({ title, children, onClose }) => (
 const AdminPage = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, limit: 20 });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState(null);
 
-  // Use TanStack Query hooks
-  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useAdminUsers({ search: searchTerm });
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 on search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Use TanStack Query hooks with pagination
+  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useAdminUsers(
+    { search: debouncedSearch }, 
+    pagination
+  );
   const { data: userDetailsData, isLoading: userDetailsLoading } = useAdminUser(selectedUserId);
   
   const verifyUserMutation = useVerifyUser();
@@ -118,13 +132,10 @@ const AdminPage = () => {
   const deleteUserMutation = useDeleteUser();
 
   const users = usersData?.users || [];
+  const totalUsers = usersData?.pagination?.total || 0;
+  const totalPages = usersData?.pagination?.pages || 1;
   const selectedUser = selectedUserId ? users.find(u => u._id === selectedUserId) : null;
   const selectedUserDetails = userDetailsData?.user || selectedUser;
-
-  const filteredUsers = users.filter(user => 
-    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const handleVerifyUser = async () => {
     if (!selectedUserId) return;
@@ -199,7 +210,12 @@ const AdminPage = () => {
                       e.preventDefault();
                       const amount = e.target.amount.value;
                       const description = e.target.description.value;
+                      const submitButton = e.target.querySelector('button[type="submit"]');
+                      
                       try {
+                          submitButton.disabled = true;
+                          submitButton.textContent = 'Adding Funds...';
+                          
                           await adminService.addFunds(selectedUserId, parseFloat(amount), description);
                           alert('Funds added successfully!');
                           setIsModalOpen(false);
@@ -207,17 +223,19 @@ const AdminPage = () => {
                           setSelectedUserId(null);
                       } catch (err) {
                           alert(err.response?.data?.message || 'Failed to add funds');
+                          submitButton.disabled = false;
+                          submitButton.textContent = 'Confirm Deposit';
                       }
                   }}>
                       <div>
                           <label className="block text-sm font-medium text-slate-400 mb-2">Amount (USD)</label>
-                          <input name="amount" type="number" placeholder="0.00" required className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                          <input name="amount" type="number" step="0.01" placeholder="0.00" required className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                       </div>
                       <div>
                           <label className="block text-sm font-medium text-slate-400 mb-2">Description</label>
                           <input name="description" type="text" placeholder="Bonus, deposit, etc." className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                       </div>
-                      <button type="submit" className="w-full bg-blue-600 font-bold py-2 rounded-lg hover:bg-blue-700 transition">Confirm Deposit</button>
+                      <button type="submit" className="w-full bg-blue-600 font-bold py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Confirm Deposit</button>
                   </form>
               );
               break;
@@ -228,14 +246,22 @@ const AdminPage = () => {
                       e.preventDefault();
                       const amount = e.target.amount.value;
                       const description = e.target.description.value;
+                      const submitButton = e.target.querySelector('button[type="submit"]');
+                      
                       try {
+                          submitButton.disabled = true;
+                          submitButton.textContent = 'Adding Profit...';
+                          
                           await adminService.addProfit(selectedUserId, parseFloat(amount), description);
                           alert('Profit added successfully!');
                           setIsModalOpen(false);
                           refetchUsers();
                           setSelectedUserId(null);
                       } catch (err) {
+                          console.error('Add profit error:', err);
                           alert(err.response?.data?.message || 'Failed to add profit');
+                          submitButton.disabled = false;
+                          submitButton.textContent = 'Confirm Profit Addition';
                       }
                   }}>
                       <div className="mb-3 p-3 bg-green-500/10 border border-green-400/30 rounded-lg">
@@ -245,13 +271,13 @@ const AdminPage = () => {
                       </div>
                       <div>
                           <label className="block text-sm font-medium text-slate-400 mb-2">Amount (USD)</label>
-                          <input name="amount" type="number" placeholder="0.00" required className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"/>
+                          <input name="amount" type="number" step="0.01" placeholder="0.00" required className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"/>
                       </div>
                       <div>
                           <label className="block text-sm font-medium text-slate-400 mb-2">Description (Optional)</label>
                           <input name="description" type="text" placeholder="Trading profit, bonus, etc." className="w-full bg-slate-700 border border-slate-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"/>
                       </div>
-                      <button type="submit" className="w-full bg-green-600 font-bold py-2 rounded-lg hover:bg-green-700 transition">Confirm Profit Addition</button>
+                      <button type="submit" className="w-full bg-green-600 font-bold py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Confirm Profit Addition</button>
                   </form>
               );
               break;
@@ -344,39 +370,65 @@ const AdminPage = () => {
                 <p className="text-slate-400">Loading users...</p>
               </div>
             </div>
-          ) : filteredUsers.length === 0 ? (
+          ) : users.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-500">
               <FaUsers className="text-6xl mb-4" />
               <p className="text-lg font-semibold">No users found</p>
               <p className="text-sm">Try adjusting your search</p>
             </div>
           ) : (
-          <ul className="divide-y divide-slate-800">
-            {filteredUsers.map(user => {
-                const statusClasses = {
-                    'Verified': 'bg-green-500/10 text-green-400',
-                    'Pending': 'bg-orange-500/10 text-orange-400',
-                    'Rejected': 'bg-red-500/10 text-red-400'
-                };
-                return (
-                    <li
-                        key={user._id}
-                        onClick={() => setSelectedUserId(user._id)}
-                        className={`p-3 sm:p-4 cursor-pointer hover:bg-slate-700/50 transition-colors ${selectedUserId === user._id ? 'bg-slate-700' : ''}`}
-                    >
-                        <div className="flex justify-between items-center gap-2">
-                            <div className="min-w-0 flex-1">
-                                <p className="font-semibold text-white text-sm sm:text-base truncate">{user.name}</p>
-                                <p className="text-xs sm:text-sm text-slate-400 truncate">{user.email}</p>
-                            </div>
-                            <span className={`px-2 py-1 text-xs font-bold rounded-full flex-shrink-0 ${statusClasses[user.accountStatus] || 'bg-gray-500/10 text-gray-400'}`}>
-                                {user.accountStatus}
-                            </span>
-                        </div>
-                    </li>
-                );
-            })}
-          </ul>
+          <div>
+            <ul className="divide-y divide-slate-800">
+              {users.map(user => {
+                  const statusClasses = {
+                      'Verified': 'bg-green-500/10 text-green-400',
+                      'Pending': 'bg-orange-500/10 text-orange-400',
+                      'Rejected': 'bg-red-500/10 text-red-400'
+                  };
+                  return (
+                      <li
+                          key={user._id}
+                          onClick={() => setSelectedUserId(user._id)}
+                          className={`p-3 sm:p-4 cursor-pointer hover:bg-slate-700/50 transition-colors ${selectedUserId === user._id ? 'bg-slate-700' : ''}`}
+                      >
+                          <div className="flex justify-between items-center gap-2">
+                              <div className="min-w-0 flex-1">
+                                  <p className="font-semibold text-white text-sm sm:text-base truncate">{user.name}</p>
+                                  <p className="text-xs sm:text-sm text-slate-400 truncate">{user.email}</p>
+                              </div>
+                              <span className={`px-2 py-1 text-xs font-bold rounded-full flex-shrink-0 ${statusClasses[user.accountStatus] || 'bg-gray-500/10 text-gray-400'}`}>
+                                  {user.accountStatus}
+                              </span>
+                          </div>
+                      </li>
+                  );
+              })}
+            </ul>
+            
+            {/* Pagination Controls */}
+            <div className="p-4 border-t border-slate-800">
+              <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+                <span>Page {pagination.page} of {totalPages}</span>
+                <span>{totalUsers} total users</span>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                  disabled={pagination.page === 1}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition text-sm"
+                >
+                  Previous
+                </button>
+                <button 
+                  onClick={() => setPagination(prev => ({ ...prev, page: Math.min(totalPages, prev.page + 1) }))}
+                  disabled={pagination.page === totalPages}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition text-sm"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
           )}
         </div>
       </aside>
